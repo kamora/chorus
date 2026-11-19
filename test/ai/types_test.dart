@@ -31,11 +31,21 @@ void main() {
   });
 
   test('string content reads as one text block', () {
-    final user = Message.fromJson({'role': 'user', 'content': 'Hello', 'timestamp': 1}) as UserMessage;
-    expect((user.content.single as TextContent).text, 'Hello');
+    expect(
+      ((Message.fromJson({'role': 'user', 'content': 'Hello', 'timestamp': 1}) as UserMessage).content.single
+              as TextContent)
+          .text,
+      'Hello',
+    );
 
-    final system = Message.fromJson({'role': 'system', 'content': 'Be brief.', 'timestamp': 1}) as SystemMessage;
-    expect(system.content.single.text, 'Be brief.');
+    expect(
+      (Message.fromJson({
+        'role': 'system',
+        'content': 'Be brief.',
+        'timestamp': 1,
+      }) as SystemMessage).content.single.text,
+      'Be brief.',
+    );
   });
 
   test('a system message keeps sections and tool changes', () {

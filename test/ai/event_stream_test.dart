@@ -21,10 +21,14 @@ void main() {
 
   test('an error before start ends the stream with the error message', () async {
     final stream = AssistantMessageEventStream();
-    final failed = message(DateTime.now().millisecondsSinceEpoch)
-      ..stopReason = StopReason.error
-      ..errorMessage = 'no auth';
-    stream.push(ErrorEvent(StopReason.error, failed));
+    stream.push(
+      ErrorEvent(
+        StopReason.error,
+        (message(DateTime.now().millisecondsSinceEpoch)
+          ..stopReason = StopReason.error
+          ..errorMessage = 'no auth'),
+      ),
+    );
 
     expect(await stream.toList(), [isA<ErrorEvent>()]);
     expect((await stream.result).errorMessage, 'no auth');

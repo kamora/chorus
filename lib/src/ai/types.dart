@@ -133,7 +133,7 @@ class ToolCall extends Content {
 
 /// Cost in dollars, split like [Usage]'s tokens.
 class Cost {
-  Cost({this.input = 0, this.output = 0, this.cacheRead = 0, this.cacheWrite = 0, this.total = 0, this.billed = false});
+  Cost({this.input = 0, this.output = 0, this.cacheRead = 0, this.cacheWrite = 0, this.total = 0, this.billed});
 
   factory Cost.fromJson(Json json) {
     return Cost(
@@ -142,7 +142,7 @@ class Cost {
       cacheRead: (json['cacheRead'] as num).toDouble(),
       cacheWrite: (json['cacheWrite'] as num).toDouble(),
       total: (json['total'] as num).toDouble(),
-      billed: json['totalFromProvider'] as bool? ?? false,
+      billed: json['totalFromProvider'] as bool?,
     );
   }
 
@@ -151,9 +151,9 @@ class Cost {
   double cacheRead;
   double cacheWrite;
 
-  /// The provider's billed cost when [billed], otherwise the catalog estimate.
+  /// The provider's billed cost when [billed] is true, otherwise the catalog estimate.
   double total;
-  bool billed;
+  bool? billed;
 
   Json toJson() {
     return {
@@ -162,7 +162,7 @@ class Cost {
       'cacheRead': cacheRead,
       'cacheWrite': cacheWrite,
       'total': total,
-      if (billed) 'totalFromProvider': true,
+      'totalFromProvider': ?billed,
     };
   }
 }
