@@ -1,6 +1,8 @@
 /// One API over LLM providers, and an agent loop on top of it: a Dart port of pi.
 library;
 
+export 'src/agent/loop.dart';
+export 'src/agent/types.dart';
 export 'src/ai/event_stream.dart';
 export 'src/ai/model.dart';
 export 'src/ai/options.dart';

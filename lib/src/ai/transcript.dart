@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'types.dart';
 
 /// The leading system message, if the transcript starts with one.
@@ -77,4 +79,22 @@ String systemText(SystemMessage message) {
     contentText(message.content),
     ...?message.sections?.values.nonNulls,
   ].where((part) => part.isNotEmpty).join('\n\n');
+}
+
+/// What tools must be added and removed to go from [previous] to [current]; a changed definition is both. Tools
+/// compare by their declaration: name, description and parameters, as JSON. Added tools are plain declarations, copied
+/// through JSON.
+({List<Tool> added, List<String> removed}) toolStateChanges(List<Tool> previous, List<Tool> current) {
+  final before = {for (final t in previous) t.name: jsonEncode(t.toJson())};
+  final after = {for (final t in current) t.name: jsonEncode(t.toJson())};
+  return (
+    added: [
+      for (final t in current)
+        if (before[t.name] != after[t.name]) Tool.fromJson(jsonDecode(after[t.name]!) as Json),
+    ],
+    removed: [
+      for (final t in previous)
+        if (after[t.name] != before[t.name]) t.name,
+    ],
+  );
 }
