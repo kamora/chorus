@@ -1,0 +1,16 @@
+name: chorus
+description: >-
+  A Dart port of pi's agent toolkit (earendil-works/pi): one API over LLM providers and an agent loop.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  anthropic_sdk_lite_dart: ^0.1.0
+  http: ^1.6.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.33.0
