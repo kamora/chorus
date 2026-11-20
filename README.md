@@ -15,6 +15,10 @@ Work in progress. So far:
   across turns, tools and strict tools, images, prompt caching with session headers, service tier pricing,
   mid-conversation effort and system messages, tool changes as `additional_tools` or client tool search, retries,
   aborts. Not ported: grammar tools, Sign in with ChatGPT, sampling parameters.
+- The Google provider for the Gemini API (`streamGoogle`, `streamSimpleGoogle`), built on google_sdk_lite_dart: thinking
+  as Gemini levels or token budgets, thought signatures replayed across turns, tools with strict (validated) calling,
+  images in function responses, retries, aborts. It sends the REST body the Gen AI SDK would send for pi's request,
+  so `onPayload` sees that body rather than the SDK's parameters. Not ported: Vertex AI and Cloud Code Assist.
 - A scripted provider for tests (`FauxProvider`), and pi's utilities: context overflow detection, the cache warming
   policy, uuidv7.
 - pi's model catalog for Anthropic, OpenAI and Google (`getBuiltinModel`, `getBuiltinModels`), vendored in `catalog/`
@@ -50,6 +54,14 @@ changes mid-conversation with the session headers), on gpt-6-luna by default:
 
 ```sh
 OPENAI_API_KEY=... dart run tool/live_openai.dart [model]
+```
+
+`tool/live_google.dart` checks the Gemini API (a plain answer, a strict tool round trip, thinking at a Gemini level
+and its thought signature sent back, budget-based thinking, implicit prompt caching, an image, an image a tool
+returns, and a real API error), on gemini-3.1-flash-lite by default:
+
+```sh
+GEMINI_API_KEY=... dart run tool/live_google.dart [model]
 ```
 
 ## License

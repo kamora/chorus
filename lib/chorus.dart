@@ -11,6 +11,7 @@ export 'src/ai/options.dart';
 export 'src/ai/overflow.dart';
 export 'src/ai/providers/anthropic.dart' show AnthropicOptions, streamAnthropic, streamSimpleAnthropic;
 export 'src/ai/providers/faux.dart';
+export 'src/ai/providers/google.dart' show GoogleOptions, GoogleThinking, streamGoogle, streamSimpleGoogle;
 export 'src/ai/providers/openai_responses.dart'
     show OpenAIResponsesOptions, streamOpenAIResponses, streamSimpleOpenAIResponses;
 export 'src/ai/providers/shared.dart' show ProviderException;

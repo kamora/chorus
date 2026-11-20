@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:anthropic_sdk_lite_dart/anthropic_sdk_lite_dart.dart' as anthropic;
+import 'package:google_sdk_lite_dart/google_sdk_lite_dart.dart' as google;
 import 'package:http_parser/http_parser.dart';
 import 'package:openai_sdk_lite_dart/openai_sdk_lite_dart.dart' as openai;
 
@@ -53,11 +54,13 @@ Future<T> retryRequest<T>(
 /// What a retry reads from an SDK's API error.
 typedef _Failure = ({int? status, Map<String, String>? headers, String? message});
 
-/// [error] as a failure that may be retried: an API error of either SDK, or null for anything else.
+/// [error] as a failure that may be retried: an API error of a provider SDK, or null for anything else. Google's has no
+/// headers, so only its status counts.
 _Failure? _failure(Object error) {
   return switch (error) {
     anthropic.APIError() => (status: error.status, headers: error.headers, message: error.message),
     openai.APIError() => (status: error.status, headers: error.headers, message: error.message),
+    google.ApiError() => (status: error.status, headers: null, message: error.message),
     _ => null,
   };
 }

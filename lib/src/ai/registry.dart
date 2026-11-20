@@ -6,6 +6,7 @@ import 'model.dart';
 import 'models.generated.dart';
 import 'options.dart';
 import 'providers/anthropic.dart';
+import 'providers/google.dart';
 import 'providers/openai_responses.dart';
 import 'types.dart';
 
@@ -180,8 +181,25 @@ Provider openaiProvider() {
   );
 }
 
+/// The built-in Google provider: the catalog's Google models on the Gemini API.
+Provider googleProvider() {
+  return Provider(
+    id: 'google',
+    name: 'Google',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    models: getBuiltinModels('google'),
+    apis: {
+      'google-generative-ai': ProviderStreams(
+        stream: (model, messages, options) =>
+            streamGoogle(model, messages, options is GoogleOptions ? options : GoogleOptions.from(options)),
+        streamSimple: streamSimpleGoogle,
+      ),
+    },
+  );
+}
+
 /// Every built-in provider chorus has an API for, freshly built.
-List<Provider> builtinProviders() => [anthropicProvider(), openaiProvider()];
+List<Provider> builtinProviders() => [anthropicProvider(), openaiProvider(), googleProvider()];
 
 /// A collection with every built-in provider registered.
 Models builtinModels() {
