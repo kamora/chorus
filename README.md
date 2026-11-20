@@ -44,6 +44,14 @@ server-side fallbacks); it costs a few cents' worth of tokens:
 ANTHROPIC_API_KEY=... dart run tool/live.dart [model]
 ```
 
+`tool/live_openai.dart` does the same against the OpenAI Responses API (a plain answer, a strict tool round trip,
+reasoning and its encrypted item sent back, prompt caching, an image, a real API error, and effort, tool and system
+changes mid-conversation with the session headers), on gpt-6-luna by default:
+
+```sh
+OPENAI_API_KEY=... dart run tool/live_openai.dart [model]
+```
+
 ## License
 
 MIT, like pi. Ported from pi, Copyright (c) 2025 Mario Zechner. See `LICENSE`.
