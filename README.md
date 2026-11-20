@@ -29,7 +29,9 @@ session fixtures, with long texts trimmed, and `test/fixtures/pi-validation-prob
 recorded with their outcomes. Nothing calls a real API.
 
 `tool/live.dart` runs live checks against the Anthropic API (a plain answer, a tool round trip through the Agent,
-adaptive thinking, and thinking sent back in a second turn); it costs a few cents' worth of tokens:
+adaptive thinking, thinking sent back in a second turn, budget-based thinking, prompt caching, an image, a real API
+error, and the beta features: strict tools, mid-conversation effort, tool and system changes, message threads and
+server-side fallbacks); it costs a few cents' worth of tokens:
 
 ```sh
 ANTHROPIC_API_KEY=... dart run tool/live.dart [model]
