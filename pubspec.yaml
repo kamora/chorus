@@ -2,7 +2,7 @@ name: chorus
 description: >-
   Build AI agents in Dart with one API for Anthropic, OpenAI and Google models: streaming, tools, thinking and an
   agent loop. A port of pi's agent toolkit.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/kamora/chorus
 topics: [ai, llm, agents, anthropic, openai]
 
@@ -15,7 +15,7 @@ dependencies:
   http: ^1.6.0
   http_parser: ^4.1.2
   openai_sdk_lite_dart: ^0.1.0
-  pluto: ^0.0.1
+  pluto: ^0.0.2
 
 dev_dependencies:
   lints: ^6.1.0

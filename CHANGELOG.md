@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Uses pluto 0.0.2: a tool schema with an invalid regular expression in `pattern` now reaches the model as
+  `SchemaException: Invalid pattern "…": …`, naming the pattern.
+
 ## 0.1.0
 
 - First release: pi-ai's provider layer and pi-agent-core's agent loop, ported to Dart.

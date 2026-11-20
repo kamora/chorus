@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chorus/chorus.dart';
-import 'package:pluto/pluto.dart' show deepEqual;
+import 'package:pluto/pluto.dart' show SchemaException, deepEqual;
 import 'package:test/test.dart';
 
 /// The outcome of one call, in the probes' format.
@@ -16,8 +16,8 @@ String outcome(String name, Json schema, Json args) {
   } on StateError catch (e) {
     final lines = e.message.split('\n');
     return e.message.startsWith('Validation failed') ? 'REJECT ${lines[1].trim()}' : 'THROW ${lines.first}';
-  } on FormatException catch (e) {
-    return 'THROW FormatException: ${e.message}';
+  } on SchemaException catch (e) {
+    return 'THROW SchemaException: ${e.message}';
   }
 }
 
@@ -41,7 +41,8 @@ const differences = {
   'reviewer probes (Sol) > BigInt from a JSON string {"n":"42"}': 'REJECT - n: expected bigint, got string',
   'reviewer probes (Sol) > Undefined from JSON null {"n":null}': 'REJECT - n: expected undefined, got null',
   'reviewer probes > format-url {"u":"not a url"} {"u":"not a url"}': 'ok {"u":"not a url"}',
-  'reviewer probes > mcp-invalid-regex {"s":"y"} {"s":"y"}': 'THROW FormatException: Unterminated character class',
+  'reviewer probes > mcp-invalid-regex {"s":"y"} {"s":"y"}':
+      'THROW SchemaException: Invalid pattern "[": Unterminated character class',
 };
 
 void main() {
