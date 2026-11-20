@@ -109,6 +109,17 @@ const _fineGrainedToolStreaming = 'fine-grained-tool-streaming-2025-05-14';
 const _interleavedThinking = 'interleaved-thinking-2025-05-14';
 const _midConversationOutputConfig = 'mid-conversation-output-config-2026-07-01';
 const _thinkingBindingControls = 'thinking-binding-controls-2026-08-01';
+const _inlineTools = 'inline-tools-2026-09-15';
+
+/// A deferred tool declared whenever tool changes are native. Anthropic adds hidden prompt scaffolding for tool changes
+/// mid-conversation; declaring this from the first request keeps it in the cached prefix, so the first tool change does
+/// not invalidate the cache. It is never activated and the model cannot see it.
+const _deferredPlaceholder = {
+  'name': '__pi_deferred_placeholder__',
+  'description': 'Reserved placeholder. Never available. Never call this.',
+  'input_schema': {'type': 'object', 'properties': <String, Object?>{}, 'required': <Object?>[]},
+  'defer_loading': true,
+};
 
 /// Anthropic's effort levels.
 const _efforts = {'low', 'medium', 'high', 'xhigh', 'max'};
@@ -125,7 +136,9 @@ class _Compat {
       emptySignature = model.compat['allowEmptySignature'] as bool? ?? false,
       adaptive = model.compat['forceAdaptiveThinking'] as bool? ?? false,
       midEffort = model.compat['supportsMidConvoEffort'] as bool? ?? false,
-      strictTools = model.compat['supportsStrictTools'] as bool? ?? false;
+      strictTools = model.compat['supportsStrictTools'] as bool? ?? false,
+      midSystem = model.compat['supportsMidConvoSystemMessages'] as bool? ?? false,
+      midTools = model.compat['supportsMidConvoToolChanges'] as bool? ?? false;
 
   final bool eagerToolInput;
   final bool longCache;
@@ -139,6 +152,12 @@ class _Compat {
   /// Models with mid-conversation effort reject `temperature`.
   final bool midEffort;
   final bool strictTools;
+
+  /// Later system messages are sent in place, as native system messages.
+  final bool midSystem;
+
+  /// Tool changes are sent in place, with native system messages.
+  final bool midTools;
 
   static bool _openRouter(Model model) => model.provider == 'openrouter' || model.baseUrl.contains('openrouter.ai');
 }
@@ -205,15 +224,31 @@ List<Json> convertMessages(
   bool emptySignature = false,
   String? effortProvider,
   Map<int, String>? efforts,
+  List<Json> Function(List<Tool> tools)? toolDefinitions,
 }) {
   final params = <Json>[];
+
+  // Later system messages (only present when the model takes them natively) are held back and sent directly before
+  // the next reply that is sent, or at the end: Anthropic rejects one between a tool use and its result, and a reply
+  // that converts to nothing is dropped, so holding past it keeps an update from landing before a user message.
+  final pending = <Json>[];
+  void flush() {
+    params.addAll(pending);
+    pending.clear();
+  }
+
   for (var i = 0; i < messages.length; i++) {
     final message = messages[i];
     switch (message) {
       case SystemMessage():
-
-        // Later system messages are collapsed into the leading one before conversion.
-        continue;
+        final text = renderSystemMessageUpdate(message);
+        final blocks = <Json>[
+          if (text.isNotEmpty) {'type': 'text', 'text': sanitizeSurrogates(text)},
+          ...?toolDefinitions == null ? null : _toolChanges(message, toolDefinitions),
+        ];
+        if (blocks.isNotEmpty) {
+          pending.add({'role': 'system', 'content': blocks});
+        }
       case UserMessage():
         final blocks = <Json>[];
         for (final c in message.content) {
@@ -272,6 +307,7 @@ List<Json> convertMessages(
           continue;
         }
 
+        flush();
         final level = message.providerThinkingLevel;
         if (efforts != null && _replayable(message, effortProvider) && _efforts.contains(level)) {
           efforts[params.length] = level!;
@@ -302,16 +338,37 @@ List<Json> convertMessages(
     }
   }
 
-  if (cache == null || params.isEmpty || params.last['role'] != 'user') {
+  flush();
+  if (cache == null || params.isEmpty || !const {'user', 'system'}.contains(params.last['role'])) {
     return params;
   }
 
   final last = (params.last['content'] as List<Json>).last;
-  if (const {'text', 'image', 'tool_result'}.contains(last['type'])) {
+  if (const {'text', 'image', 'tool_result', 'tool_addition', 'tool_removal'}.contains(last['type'])) {
     last['cache_control'] = cache;
   }
 
   return params;
+}
+
+// A system message's tool changes as native blocks: removals, then additions defined by value. A tool added again
+// under its name replaces the old definition, so it needs no removal.
+List<Json> _toolChanges(SystemMessage message, List<Json> Function(List<Tool> tools) toolDefinitions) {
+  final added = message.added ?? const <Tool>[];
+  final redefined = {for (final t in added) t.name};
+  return [
+    for (final name in message.removed ?? const <String>[])
+      if (!redefined.contains(name))
+        {
+          'type': 'tool_removal',
+          'tool': {'type': 'tool_reference', 'name': name},
+        },
+    for (final definition in toolDefinitions(added))
+      {
+        'type': 'tool_addition',
+        'tool': {'type': 'tool_definition', 'definition': definition},
+      },
+  ];
 }
 
 // Whether [message] is a reply of [provider] on this API, whose recorded effort can be replayed.
@@ -430,6 +487,26 @@ Json _tool(Tool tool, bool eager, Json? cache, bool supported, bool disablePrefe
   };
 }
 
+/// Whether tool changes are sent natively: the model takes both system messages and tool changes mid-conversation, and
+/// the transcript starts with tools (Anthropic rejects a tool list whose only tool is the deferred placeholder).
+bool _nativeToolChanges(Model model, List<Message> transcript) {
+  final compat = _Compat(model);
+  if (!compat.midSystem || !compat.midTools) {
+    return false;
+  }
+
+  return initialSystemMessage(transcript)?.added?.isNotEmpty ?? false;
+}
+
+/// The tools a request of [transcript] declares: every addition when tool changes are native, else the current ones.
+List<Tool> _sentTools(Model model, List<Message> transcript) {
+  if (!_nativeToolChanges(model, transcript)) {
+    return currentTools(transcript);
+  }
+
+  return [for (final m in transcript.whereType<SystemMessage>()) ...?m.added];
+}
+
 /// Whether a request of [tools] sends a `prefer` tool strict, so a rejection for Claude's strict tool limits can be
 /// resent without.
 bool _hasPreferredStrict(Model model, List<Tool> tools, bool disablePreferred) {
@@ -451,7 +528,7 @@ final _overStrictLimits = SessionSet(10000);
 
 /// The beta features of a request. An `anthropic-beta` header in the model's or the caller's headers replaces them
 /// (a `null` one clears them).
-List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options) {
+List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options, {bool native = false}) {
   var configured = false;
   String? value;
   for (final headers in [model.headers, options.headers]) {
@@ -473,6 +550,7 @@ List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options) {
     if (model.reasoning && options.thinkingEnabled == true && (options.interleavedThinking ?? true) && !compat.adaptive)
       _interleavedThinking,
     if (compat.midEffort) ...[_midConversationOutputConfig, _thinkingBindingControls],
+    if (native) _inlineTools,
   }.toList();
 }
 
@@ -483,7 +561,19 @@ Json buildParams(Model model, List<Message> messages, AnthropicOptions options, 
   final system = initialSystemMessage(messages);
   final transformed = transformMessages(messages, model, normalizeToolCallId);
   final tools = currentTools(messages);
-  final betas = _betas(model, tools, options);
+  final native = _nativeToolChanges(model, messages);
+  final betas = _betas(model, tools, options, native: native);
+  final toolCache = compat.cachedTools ? cache : null;
+  List<Json> definitions(List<Tool> list, [Json? cache]) {
+    return convertTools(
+      list,
+      eager: compat.eagerToolInput,
+      cache: cache,
+      strict: compat.strictTools,
+      disablePreferredStrict: disablePreferredStrict,
+    );
+  }
+
   final text = system == null ? '' : systemText(system);
 
   final markers = _effortMarkers(model, options);
@@ -494,6 +584,7 @@ Json buildParams(Model model, List<Message> messages, AnthropicOptions options, 
     emptySignature: compat.emptySignature,
     effortProvider: markers ? model.provider : null,
     efforts: efforts,
+    toolDefinitions: native ? definitions : null,
   );
   final params = <String, Object?>{
     'model': model.id,
@@ -513,14 +604,13 @@ Json buildParams(Model model, List<Message> messages, AnthropicOptions options, 
     params['temperature'] = temperature;
   }
 
-  if (tools.isNotEmpty) {
-    params['tools'] = convertTools(
-      tools,
-      eager: compat.eagerToolInput,
-      cache: compat.cachedTools ? cache : null,
-      strict: compat.strictTools,
-      disablePreferredStrict: disablePreferredStrict,
-    );
+  if (native) {
+    // The initial tools (with the cache breakpoint) and the placeholder. The list never changes: later tools are
+    // defined by value in `tool_addition` blocks and withdrawn with `tool_removal`, so the cached prefix survives every
+    // tool change.
+    params['tools'] = [...definitions(initialSystemMessage(messages)!.added!, toolCache), _deferredPlaceholder];
+  } else if (tools.isNotEmpty) {
+    params['tools'] = definitions(tools, toolCache);
   }
 
   // A `thinkingLevelMap` with `off: null` marks thinking as impossible to turn off.
@@ -736,7 +826,9 @@ AssistantMessageEventStream streamAnthropic(
   AnthropicOptions options = const AnthropicOptions(),
 ]) {
   final stream = AssistantMessageEventStream();
-  unawaited(_run(model, collapseSystemMessages(messages), options, stream));
+  // Later system messages stay in place for models that take them natively; otherwise they fold into the leading one.
+  final transcript = _Compat(model).midSystem ? messages : collapseSystemMessages(messages);
+  unawaited(_run(model, transcript, options, stream));
   return stream;
 }
 
@@ -795,7 +887,7 @@ Future<void> _run(
           rethrow;
         }
 
-        if (!_hasPreferredStrict(model, currentTools(transcript), disablePreferred)) {
+        if (!_hasPreferredStrict(model, _sentTools(model, transcript), disablePreferred)) {
           rethrow;
         }
 

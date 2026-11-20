@@ -81,6 +81,17 @@ String systemText(SystemMessage message) {
   ].where((part) => part.isNotEmpty).join('\n\n');
 }
 
+/// A later system message, for APIs that accept system messages mid-conversation: its content, then each section
+/// change framed by name so the model can relate it to the leading prompt.
+String renderSystemMessageUpdate(SystemMessage message) {
+  final text = contentText(message.content);
+  return [
+    if (text.isNotEmpty) text,
+    for (final MapEntry(:key, :value) in (message.sections ?? const <String, String?>{}).entries)
+      value == null ? 'Removed system prompt section "$key".' : 'Updated system prompt section "$key":\n\n$value',
+  ].join('\n\n');
+}
+
 /// What tools must be added and removed to go from [previous] to [current]; a changed definition is both. Tools
 /// compare by their declaration: name, description and parameters, as JSON. Added tools are plain declarations, copied
 /// through JSON.
