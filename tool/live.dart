@@ -5,28 +5,13 @@
 ///
 ///     ANTHROPIC_API_KEY=... dart run tool/live.dart [model]
 ///
-/// The model defaults to claude-haiku-5-5. Exits with 1 when a check fails.
+/// The model comes from the catalog and defaults to claude-haiku-5-5. Exits with 1 when a check fails, and with 2
+/// without a key or for an unknown model.
 library;
 
 import 'dart:io';
 
 import 'package:chorus/chorus.dart';
-
-Model _model(String id) {
-  return Model(
-    id: id,
-    name: id,
-    api: 'anthropic-messages',
-    provider: 'anthropic',
-    baseUrl: 'https://api.anthropic.com',
-    input: const ['text', 'image'],
-    cost: const ModelCost(input: 1, output: 5, cacheRead: 0.1, cacheWrite: 1.25),
-    reasoning: true,
-    contextWindow: 200000,
-    maxTokens: 8000,
-    compat: const {'forceAdaptiveThinking': true},
-  );
-}
 
 String _text(AssistantMessage message) => message.content.whereType<TextContent>().map((c) => c.text).join().trim();
 
@@ -47,7 +32,13 @@ Future<void> main(List<String> args) async {
     exit(2);
   }
 
-  final model = _model(args.firstOrNull ?? 'claude-haiku-5-5');
+  final models = builtinModels['anthropic']!;
+  final model = models[args.firstOrNull ?? 'claude-haiku-5-5'];
+  if (model == null) {
+    stderr.writeln('Unknown model. Anthropic models: ${models.keys.join(', ')}');
+    exit(2);
+  }
+
   final options = SimpleStreamOptions(apiKey: key, maxTokens: 4000);
   final plain = await streamSimpleAnthropic(model, [
     UserMessage([TextContent('Reply with exactly: pong')], timestamp: 1),
