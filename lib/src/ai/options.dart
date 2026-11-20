@@ -50,6 +50,7 @@ class StreamOptions {
     this.onPayload,
     this.onResponse,
     this.onEvent,
+    this.disableContinuation,
   });
 
   final AbortSignal? signal;
@@ -90,6 +91,10 @@ class StreamOptions {
 
   /// Sees each event of the provider's stream, as the provider sent it, before chorus reads it.
   final FutureOr<void> Function(Json event, Model model)? onEvent;
+
+  /// Sends a request without continuing provider-side state, such as an Anthropic message thread, and leaves that
+  /// state as it is: for a side request like a cache-warming replay.
+  final bool? disableContinuation;
 }
 
 /// Token budgets for each thinking level, for models that think within a budget.
@@ -120,6 +125,7 @@ class SimpleStreamOptions extends StreamOptions {
     super.onPayload,
     super.onResponse,
     super.onEvent,
+    super.disableContinuation,
     this.reasoning,
     this.budgets,
     this.toolChoice,

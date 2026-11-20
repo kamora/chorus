@@ -41,6 +41,7 @@ class AnthropicOptions extends StreamOptions {
     super.onPayload,
     super.onResponse,
     super.onEvent,
+    super.disableContinuation,
     this.thinkingEnabled,
     this.thinkingBudgetTokens,
     this.effort,
@@ -68,6 +69,7 @@ class AnthropicOptions extends StreamOptions {
       onPayload: options.onPayload,
       onResponse: options.onResponse,
       onEvent: options.onEvent,
+      disableContinuation: options.disableContinuation,
     );
   }
 
@@ -111,6 +113,7 @@ const _midConversationOutputConfig = 'mid-conversation-output-config-2026-07-01'
 const _thinkingBindingControls = 'thinking-binding-controls-2026-08-01';
 const _inlineTools = 'inline-tools-2026-09-15';
 const _serverSideFallback = 'server-side-fallback-2026-07-01';
+const _messageThreads = 'message-threads-2026-08-12';
 
 /// A deferred tool declared whenever tool changes are native. Anthropic adds hidden prompt scaffolding for tool changes
 /// mid-conversation; declaring this from the first request keeps it in the cached prefix, so the first tool change does
@@ -140,7 +143,8 @@ class _Compat {
       strictTools = model.compat['supportsStrictTools'] as bool? ?? false,
       midSystem = model.compat['supportsMidConvoSystemMessages'] as bool? ?? false,
       midTools = model.compat['supportsMidConvoToolChanges'] as bool? ?? false,
-      fallbacks = (model.compat['allowedFallbackModels'] as List<Object?>? ?? const []).cast<Json>();
+      fallbacks = (model.compat['allowedFallbackModels'] as List<Object?>? ?? const []).cast<Json>(),
+      threads = model.compat['supportsMessageThreads'] as bool? ?? model.baseUrl.contains('api.anthropic.com');
 
   final bool eagerToolInput;
   final bool longCache;
@@ -163,6 +167,9 @@ class _Compat {
 
   /// The models the API may fall back to: `provider`, `model`, and the `cost` the caller is billed.
   final List<Json> fallbacks;
+
+  /// Message threads: only on Anthropic's own endpoint by default, until proxies generally forward `thread`.
+  final bool threads;
 
   static bool _openRouter(Model model) => model.provider == 'openrouter' || model.baseUrl.contains('openrouter.ai');
 }
@@ -533,7 +540,13 @@ final _overStrictLimits = SessionSet(10000);
 
 /// The beta features of a request. An `anthropic-beta` header in the model's or the caller's headers replaces them
 /// (a `null` one clears them).
-List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options, {bool native = false}) {
+List<String> _betas(
+  Model model,
+  List<Tool> tools,
+  AnthropicOptions options, {
+  bool native = false,
+  bool threads = false,
+}) {
   var configured = false;
   String? value;
   for (final headers in [model.headers, options.headers]) {
@@ -557,18 +570,27 @@ List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options, {bo
     if (compat.midEffort) ...[_midConversationOutputConfig, _thinkingBindingControls],
     if (compat.fallbacks.isNotEmpty) _serverSideFallback,
     if (native) _inlineTools,
+    if (threads) _messageThreads,
   }.toList();
 }
 
 /// The request body for [messages], a transcript whose only system message leads.
-Json buildParams(Model model, List<Message> messages, AnthropicOptions options, {bool disablePreferredStrict = false}) {
+///
+/// [threads] says the session uses message threads, so the threads beta is sent.
+Json buildParams(
+  Model model,
+  List<Message> messages,
+  AnthropicOptions options, {
+  bool disablePreferredStrict = false,
+  bool threads = false,
+}) {
   final cache = _cacheControl(model, options.cacheRetention);
   final compat = _Compat(model);
   final system = initialSystemMessage(messages);
   final transformed = transformMessages(messages, model, normalizeToolCallId);
   final tools = currentTools(messages);
   final native = _nativeToolChanges(model, messages);
-  final betas = _betas(model, tools, options, native: native);
+  final betas = _betas(model, tools, options, native: native, threads: threads);
   final toolCache = compat.cachedTools ? cache : null;
   List<Json> definitions(List<Tool> list, [Json? cache]) {
     return convertTools(
@@ -844,6 +866,207 @@ AssistantMessageEventStream streamAnthropic(
   return stream;
 }
 
+// Message threads: the server keeps a thread's conversation, so a request can continue from the previous reply and send
+// only the new messages. The full request is still built; it is compared with the session's previous one, and only the
+// new part is sent when nothing earlier changed.
+
+/// Where a session's next request can continue: the length and hash of the last full request plus its reply, and the
+/// reply's id.
+typedef _Thread = ({int prefixCount, String prefixHash, String replyId});
+
+/// Per session: where the next request can continue, or [_threadsOff] after the endpoint rejected threads. At most
+/// 10,000 sessions; a dropped one just starts a new thread next time.
+final _threads = SessionMap<Object>(10000);
+const _threadsOff = #off;
+
+/// Rejections of a `continue` that a new thread fixes: expired, raced, or a fixed setting changed.
+const _newThreadErrors = {
+  'thread_not_found',
+  'thread_already_continued',
+  'thread_continue_in_flight',
+  'thread_fingerprint_mismatch',
+};
+
+/// Hash of what a `continue` builds on: the settings that must stay the same within a thread (a `continue` omits
+/// `system` and `tools`, so only this notices a change to them) and the messages the server already holds, normalized
+/// so messages that mean the same hash the same.
+String _threadHash(Model model, Json params, List<Object?> messages) {
+  final settings = jsonEncode([
+    model.provider,
+    model.baseUrl,
+    params['model'],
+    params['system'],
+    params['tools'],
+    params['thinking'],
+    params['output_config'],
+    params['tool_choice'],
+    params['betas'],
+    params['fallbacks'],
+  ]);
+  return _shortHash(settings + jsonEncode(_withoutCacheMarkers(messages)));
+}
+
+// Cache markers move to the newest message from request to request, and a string content means one text block.
+Object? _withoutCacheMarkers(Object? value) {
+  return switch (value) {
+    Map() => {
+      for (final MapEntry(:key, :value) in value.entries)
+        if (key != 'cache_control') key: _normalized(key, value),
+    },
+    List() => [for (final v in value) _withoutCacheMarkers(v)],
+    _ => value,
+  };
+}
+
+Object? _normalized(Object? key, Object? value) {
+  if (key == 'content' && value is String) {
+    return [
+      {'type': 'text', 'text': value},
+    ];
+  }
+
+  return _withoutCacheMarkers(value);
+}
+
+/// A fast deterministic hash (pi's `shortHash`): two 32-bit lanes over the UTF-16 units.
+String _shortHash(String text) {
+  int mul(int a, int b) => (a * b) & 0xffffffff;
+  var h1 = 0xdeadbeef;
+  var h2 = 0x41c6ce57;
+  for (final c in text.codeUnits) {
+    h1 = mul(h1 ^ c, 2654435761);
+    h2 = mul(h2 ^ c, 1597334677);
+  }
+
+  h1 = mul(h1 ^ (h1 >> 16), 2246822507) ^ mul(h2 ^ (h2 >> 13), 3266489909);
+  h2 = mul(h2 ^ (h2 >> 16), 2246822507) ^ mul(h1 ^ (h1 >> 13), 3266489909);
+  return h2.toRadixString(36) + h1.toRadixString(36);
+}
+
+/// A request in a session's thread.
+typedef _ThreadRequest = ({String session, Json body});
+
+_ThreadRequest _createThread(String session, Json params) {
+  return (
+    session: session,
+    body: {
+      ...params,
+      'thread': {'type': 'create'},
+    },
+  );
+}
+
+/// The thread request for [params]: a `continue` with only the new messages when the session's last request plus its
+/// reply is an unchanged prefix, else a new thread; null when the session's threads are off.
+_ThreadRequest? _prepareThread(Model model, String session, Json params) {
+  final state = _threads[session];
+  if (state == _threadsOff) {
+    return null;
+  }
+
+  final messages = params['messages'] as List<Object?>;
+  if (state is _Thread &&
+      messages.length > state.prefixCount &&
+      _threadHash(model, params, messages.sublist(0, state.prefixCount)) == state.prefixHash) {
+    // Each reply can be continued once; removing it also keeps a concurrent request from trying.
+    _threads.remove(session);
+    return (
+      session: session,
+      body: {
+        for (final MapEntry(:key, :value) in params.entries)
+          if (key != 'system' && key != 'tools') key: value,
+        'messages': messages.sublist(state.prefixCount),
+        'thread': {'type': 'continue', 'previous_message_id': state.replyId},
+      },
+    );
+  }
+
+  return _createThread(session, params);
+}
+
+/// The `error_code` Anthropic puts in `error.details` of thread rejections.
+String? _threadErrorCode(APIError error) {
+  final body = error.error;
+  if (body is! Map) {
+    return null;
+  }
+
+  final details = (body['error'] as Map?)?['details'];
+  return details is Map ? details['error_code'] as String? : null;
+}
+
+/// Sends [thread]. A rejection about the thread (never a started stream) is resent once in full: as a new thread when
+/// the old one cannot be continued, or without `thread` when the endpoint cannot use threads, which also turns them
+/// off for the session. Other errors are passed on. Returns the response and the thread request it answers, if any.
+Future<(http.StreamedResponse, _ThreadRequest?)> _sendThread(
+  _ThreadRequest thread,
+  Json params,
+  Future<http.StreamedResponse> Function(Json body) send,
+  AssistantMessage output,
+  AbortSignal? signal,
+) async {
+  try {
+    return (await send(thread.body), thread);
+  } on APIError catch (error) {
+    if (signal?.aborted ?? false) {
+      rethrow;
+    }
+
+    final code = _threadErrorCode(error);
+    final newThread = _newThreadErrors.contains(code);
+
+    // The endpoint cannot use threads: it cannot thread this request, or it does not know the `thread` field and
+    // rejects it without a code ("thread: Extra inputs are not permitted"), as without the threads beta.
+    final unsupported =
+        code == 'thread_unsupported_request' ||
+        (code == null && error.status == 400 && error.message.contains('thread'));
+
+    // Any other error (prompt too long, unknown model, strict tool limits...) is not about the thread.
+    if (!newThread && !unsupported) {
+      rethrow;
+    }
+
+    // Recorded before the resend, so a failed resend keeps it.
+    output.diagnostics = [
+      ...?output.diagnostics,
+      Diagnostic(
+        type: 'anthropic_thread_fallback',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        error: {'message': error.message},
+        details: {'reason': code ?? '${error.status}'},
+      ),
+    ];
+    if (newThread) {
+      final created = _createThread(thread.session, params);
+      return (await send(created.body), created);
+    }
+
+    // With the threads beta, a request without `thread` is a normal one.
+    final response = await send(params);
+    _threads[thread.session] = _threadsOff;
+    return (response, null);
+  }
+}
+
+/// Records where the session's next request can continue: after [output], the clean reply to [thread], whose full
+/// request was [params].
+void _recordThread(Model model, _ThreadRequest thread, Json params, AssistantMessage output) {
+  // The server does not store a fallback model's reply (`responseModel` is set only then), so it cannot be continued.
+  final id = output.responseId;
+  if (id == null || output.responseModel != null) {
+    return;
+  }
+
+  // The reply converted as the next request will convert it, without the placeholder results of trailing tool calls.
+  final reply = convertMessages(
+    transformMessages([output], model, normalizeToolCallId),
+    null,
+    emptySignature: _Compat(model).emptySignature,
+  ).where((m) => m['role'] == 'assistant');
+  final prefix = [...params['messages'] as List<Object?>, ...reply];
+  _threads[thread.session] = (prefixCount: prefix.length, prefixHash: _threadHash(model, params, prefix), replyId: id);
+}
+
 Future<void> _run(
   Model model,
   List<Message> transcript,
@@ -873,25 +1096,58 @@ Future<void> _run(
       output.providerThinkingLevel = options.effort ?? 'high';
     }
 
+    // The session whose requests may use threads: none without prompt caching or on endpoints without threads. A
+    // session whose threads are off still sends the beta, which the resend that turned them off was accepted with.
+    final session = options.cacheRetention == CacheRetention.none ? null : options.sessionId;
+    final threadSession = _Compat(model).threads ? session : null;
+    Future<http.StreamedResponse> send(Json body) {
+      return retryRequest(
+        () => (options.client ?? owned!).beta.messages.create(
+          body,
+          RequestOptions(signal: signal?.future, timeout: options.timeout),
+        ),
+        maxRetries: options.maxRetries,
+        maxDelay: options.maxRetryDelay,
+        signal: signal,
+      );
+    }
+
     var disablePreferred = _overStrictLimits.contains(options.sessionId);
     http.StreamedResponse response;
+    Json params;
+
+    // The thread request that produced the response; null when no `thread` was sent.
+    _ThreadRequest? thread;
     for (;;) {
-      var params = buildParams(model, transcript, options, disablePreferredStrict: disablePreferred);
+      if (signal?.aborted ?? false) {
+        throw const AbortedException();
+      }
+
+      params = buildParams(
+        model,
+        transcript,
+        options,
+        disablePreferredStrict: disablePreferred,
+        threads: threadSession != null,
+      );
       final next = await options.onPayload?.call(params, model);
       if (next != null) {
         params = {...next, 'stream': true};
       }
 
+      _ThreadRequest? prepared;
+      if (threadSession != null && options.disableContinuation != true) {
+        prepared = _prepareThread(model, threadSession, params);
+      }
+
       try {
-        response = await retryRequest(
-          () => (options.client ?? owned!).beta.messages.create(
-            params,
-            RequestOptions(signal: signal?.future, timeout: options.timeout),
-          ),
-          maxRetries: options.maxRetries,
-          maxDelay: options.maxRetryDelay,
-          signal: signal,
-        );
+        if (prepared == null) {
+          response = await send(params);
+          thread = null;
+        } else {
+          (response, thread) = await _sendThread(prepared, params, send, output, signal);
+        }
+
         break;
       } on APIError catch (error) {
         // Only a rejected request is resent, once, with its `prefer` tools non-strict; never a started stream.
@@ -930,6 +1186,10 @@ Future<void> _run(
 
     if (output.stopReason == StopReason.aborted || output.stopReason == StopReason.error) {
       throw ProviderException(output.errorMessage ?? 'An unknown error occurred');
+    }
+
+    if (thread != null) {
+      _recordThread(model, thread, params, output);
     }
 
     stream.push(DoneEvent(output.stopReason, output));
@@ -1142,6 +1402,7 @@ AssistantMessageEventStream streamSimpleAnthropic(
       onPayload: options.onPayload,
       onResponse: options.onResponse,
       onEvent: options.onEvent,
+      disableContinuation: options.disableContinuation,
       thinkingEnabled: thinking,
       effort: effort,
       thinkingBudgetTokens: budget,

@@ -59,3 +59,34 @@ class SessionSet {
 
   bool contains(String? id) => id != null && _ids.contains(id);
 }
+
+/// Values by session id that keep at most [max] entries (the least recently set go first) and empty with
+/// [cleanupSessionResources].
+class SessionMap<V> {
+  SessionMap(this.max) {
+    registerSessionCleanup((id) {
+      if (id == null) {
+        _values.clear();
+      } else {
+        _values.remove(id);
+      }
+    });
+  }
+
+  final int max;
+  final _values = <String, V>{};
+
+  V? operator [](String id) => _values[id];
+
+  /// Sets [id]'s value, as the most recently set.
+  void operator []=(String id, V value) {
+    _values
+      ..remove(id)
+      ..[id] = value;
+    if (_values.length > max) {
+      _values.remove(_values.keys.first);
+    }
+  }
+
+  void remove(String id) => _values.remove(id);
+}

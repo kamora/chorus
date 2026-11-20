@@ -292,6 +292,7 @@ Future<AssistantMessage> _respond(
       onPayload: o.onPayload,
       onResponse: o.onResponse,
       onEvent: o.onEvent,
+      disableContinuation: o.disableContinuation,
       reasoning: config.level == ThinkingLevel.off ? null : config.level,
       budgets: o.budgets,
       toolChoice: o.toolChoice,
