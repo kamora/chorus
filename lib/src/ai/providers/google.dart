@@ -249,7 +249,7 @@ List<Json> convertGoogleMessages(Model model, List<Message> messages) {
                 'functionCall': {'args': block.arguments, if (ids) 'id': block.id, 'name': block.name},
                 'thoughtSignature': ?_signature(same, block.thoughtSignature),
               });
-            case ImageContent():
+            case ImageContent() || ServerToolContent():
               continue;
           }
         }

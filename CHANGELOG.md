@@ -1,3 +1,9 @@
+## Unreleased
+
+- Anthropic's server tools, such as web search: declared with `AnthropicOptions.serverTools`; their calls and results
+  are kept as `ServerToolContent` (JSON type `serverTool`) and sent back unchanged in later turns. Other providers
+  leave them out. Before, the Anthropic provider dropped every block it did not know.
+
 ## 0.1.1
 
 - Uses pluto 0.0.2: a tool schema with an invalid regular expression in `pattern` now reaches the model as

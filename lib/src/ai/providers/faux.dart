@@ -347,7 +347,7 @@ class FauxProvider {
 
           open.arguments = block.arguments;
           stream.push(ToolCallEndEvent(index, block, partial));
-        case ImageContent():
+        case ImageContent() || ServerToolContent():
           continue;
       }
     }
@@ -455,7 +455,7 @@ String _assistantText(List<Content> content) {
         TextContent(:final text) => text,
         ThinkingContent(:final thinking) => thinking,
         ToolCall(:final name, :final arguments) => '$name:${jsonEncode(arguments)}',
-        ImageContent() => '',
+        ImageContent() || ServerToolContent() => '',
       },
   ].join('\n');
 }

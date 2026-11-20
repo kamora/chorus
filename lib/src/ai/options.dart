@@ -249,6 +249,7 @@ int estimateMessageTokens(Message message) {
               ThinkingContent() => b.thinking.length,
               ToolCall() => b.name.length + jsonEncode(b.arguments).length,
               ImageContent() => 0,
+              ServerToolContent() => jsonEncode(b.block).length,
             };
       }),
     ),

@@ -173,6 +173,12 @@ List<Message> transformMessages(
               );
             case ImageContent():
               content.add(block);
+
+            // A server block goes back only to the API and provider that ran it.
+            case ServerToolContent():
+              if (m.provider == model.provider && m.api == model.api) {
+                content.add(block);
+              }
           }
         }
 

@@ -137,6 +137,32 @@ across turns so it can continue from it, use prompt caching where the API offers
 models, OpenAI's service tiers, and changing the effort or the tools in the middle of a conversation without losing
 the cached prompt.
 
+### Anthropic's server tools
+
+Tools that Anthropic's server runs, such as web search, are declared with `AnthropicOptions.serverTools`. Their calls
+and results come back as `ServerToolContent`, kept as the API sent them so that later turns send them back; other
+providers leave them out. To use them with an `Agent`, give it a `stream` that calls `streamAnthropic`:
+
+```dart
+final agent = Agent(
+  model: getBuiltinModel('anthropic', 'claude-opus-5-5')!,
+  stream: (model, messages, options) => streamAnthropic(
+    model,
+    messages,
+    AnthropicOptions(
+      apiKey: key,
+      signal: options.signal,
+      serverTools: const [
+        {'type': 'web_search_20260209', 'name': 'web_search', 'max_uses': 3},
+      ],
+    ),
+  ),
+);
+```
+
+A reply the server pauses after ten rounds of its own (`pause_turn`) ends as a plain stop and is not resumed, so keep
+`max_uses` well below that.
+
 ## Scope and limitations
 
 - No session storage, authentication or proxy: keys and HTTP clients are passed with each request.
@@ -152,6 +178,8 @@ the cached prompt.
 - The Google provider builds the REST body the Gen AI SDK would send for pi's request, so `onPayload` sees that body
   rather than the SDK's parameters.
 - pi's identity headers and its OAuth "stealth mode" are not ported.
+- Anthropic's server tools are chorus's own: pi drops their blocks. A transcript that holds them has content of type
+  `serverTool`, which pi does not know.
 
 ## Tests
 

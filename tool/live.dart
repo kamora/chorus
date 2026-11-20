@@ -1,6 +1,7 @@
 /// Live checks against the Anthropic API, through the built-in providers: a plain answer, a tool round trip through the
 /// Agent, adaptive thinking, signed thinking sent back in a second turn, budget-based thinking (on claude-haiku-4-5),
-/// prompt caching, an image, a real API error, and the beta features: strict tools, effort changed mid-conversation,
+/// prompt caching, an image, a real API error, web search (a server tool) sent back in a second turn, and the beta
+/// features: strict tools, effort changed mid-conversation,
 /// tools and system messages changed mid-conversation, message threads, and server-side fallbacks (on
 /// claude-fable-5-2, the cheapest model that has them). The beta checks read the requests actually sent.
 ///
@@ -221,6 +222,35 @@ Future<void> main(List<String> args) async {
         threads.contains('continue') &&
         fallbacks.isEmpty,
     product,
+  );
+
+  // Web search, run by Anthropic's server: its blocks are kept, then sent back in a second turn that needs them.
+  final searching = Agent(
+    model: model,
+    systemPrompt: 'Answer in one short sentence.',
+    stream: (model, messages, options) => streamAnthropic(
+      model,
+      messages,
+      AnthropicOptions(
+        apiKey: key,
+        maxTokens: 4000,
+        signal: options.signal,
+        serverTools: const [
+          {'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 2},
+        ],
+      ),
+    ),
+  );
+  await searching.promptText('Search the web: what is the capital of Australia?');
+  final found = searching.messages.last as AssistantMessage;
+  await searching.promptText('What is its population? From the search results you already have, if they say.');
+  final followed = searching.messages.last as AssistantMessage;
+  check(
+    'web search, kept and sent back',
+    found.content.any((c) => c is ServerToolContent && c.block['type'] == 'web_search_tool_result') &&
+        text(found).contains('Canberra') &&
+        followed.stopReason == StopReason.stop,
+    followed,
   );
 
   final fable = getBuiltinModel('anthropic', 'claude-fable-5-2')!;

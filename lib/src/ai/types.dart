@@ -23,6 +23,7 @@ sealed class Content {
       'thinking' => ThinkingContent.fromJson(json),
       'image' => ImageContent.fromJson(json),
       'toolCall' => ToolCall.fromJson(json),
+      'serverTool' => ServerToolContent.fromJson(json),
       final type => throw FormatException('Unknown content type: $type'),
     };
   }
@@ -129,6 +130,21 @@ class ToolCall extends Content {
       'argumentsError': ?argumentsError,
     };
   }
+}
+
+/// A block the provider's own server produced while it answered, such as Anthropic's web search call and its results:
+/// kept exactly as the provider sent it, so the conversation can be sent back to that provider. Other providers leave
+/// it out. Not in pi, which drops these blocks.
+class ServerToolContent extends Content {
+  ServerToolContent(this.block);
+
+  factory ServerToolContent.fromJson(Json json) => ServerToolContent(Map.of(json['block'] as Json));
+
+  /// The block as the provider's API sent it.
+  final Json block;
+
+  @override
+  Json toJson() => {'type': 'serverTool', 'block': block};
 }
 
 /// Cost in dollars, split like [Usage]'s tokens.

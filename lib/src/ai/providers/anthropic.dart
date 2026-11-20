@@ -50,6 +50,7 @@ class AnthropicOptions extends StreamOptions {
     this.thinkingDisplay,
     this.interleavedThinking,
     this.toolChoice,
+    this.serverTools,
     this.client,
   });
 
@@ -93,6 +94,12 @@ class AnthropicOptions extends StreamOptions {
 
   /// `auto`, `any`, `none`, or `{'type': 'tool', 'name': ...}` to force a tool.
   final Object? toolChoice;
+
+  /// Tools Anthropic's server runs, as the API declares them, such as `{'type': 'web_search_20260209', 'name':
+  /// 'web_search', 'max_uses': 3}`: sent before the transcript's tools. Their calls and results come back as
+  /// [ServerToolContent]. A reply the server paused (`pause_turn`, after ten rounds of its own) ends as a plain stop and
+  /// is not resumed, so keep `max_uses` well below that.
+  final List<Json>? serverTools;
 
   /// A client to send with instead of one built from [apiKey] and [headers]; for example one with a workload
   /// identity federation `config`.
@@ -297,6 +304,8 @@ List<Json> convertMessages(
               }
             case ToolCall():
               blocks.add({'type': 'tool_use', 'id': block.id, 'name': block.name, 'input': block.arguments});
+            case ServerToolContent():
+              blocks.add(block.block);
             case ImageContent():
               continue;
           }
@@ -623,9 +632,13 @@ Json buildParams(
     // The initial tools (with the cache breakpoint) and the placeholder. The list never changes: later tools are
     // defined by value in `tool_addition` blocks and withdrawn with `tool_removal`, so the cached prefix survives every
     // tool change.
-    params['tools'] = [...definitions(initialSystemMessage(messages)!.added!, toolCache), _deferredPlaceholder];
-  } else if (tools.isNotEmpty) {
-    params['tools'] = definitions(tools, toolCache);
+    params['tools'] = [
+      ...?options.serverTools,
+      ...definitions(initialSystemMessage(messages)!.added!, toolCache),
+      _deferredPlaceholder,
+    ];
+  } else if (tools.isNotEmpty || (options.serverTools?.isNotEmpty ?? false)) {
+    params['tools'] = [...?options.serverTools, ...definitions(tools, toolCache)];
   }
 
   // A `thinkingLevelMap` with `off: null` marks thinking as impossible to turn off.
@@ -1269,18 +1282,29 @@ Future<List<Object?>?> _read(
             content = ThinkingContent('[Reasoning redacted]', signature: block['data'] as String?, redacted: true);
           case 'tool_use':
             content = ToolCall(block['id'] as String, block['name'] as String, (block['input'] as Json?) ?? {});
+
+          // Any other block was made by Anthropic's server, such as a web search and its results: kept as it came,
+          // to be sent back as it is. Its input may still stream in.
           default:
-            continue;
+            content = ServerToolContent(Map.of(block));
         }
 
         output.content.add(content);
         final at = output.content.length - 1;
-        open[event['index'] as int] = (index: at, arguments: content is ToolCall ? ToolArgumentsStream() : null);
-        stream.push(switch (content) {
-          TextContent() => TextStartEvent(at, output),
-          ToolCall() => ToolCallStartEvent(at, output),
-          _ => ThinkingStartEvent(at, output),
-        });
+        open[event['index'] as int] = (
+          index: at,
+          arguments: content is ToolCall || content is ServerToolContent ? ToolArgumentsStream() : null,
+        );
+        switch (content) {
+          case TextContent():
+            stream.push(TextStartEvent(at, output));
+          case ToolCall():
+            stream.push(ToolCallStartEvent(at, output));
+          case ThinkingContent():
+            stream.push(ThinkingStartEvent(at, output));
+          default:
+            break;
+        }
       case 'content_block_delta':
         final at = open[event['index'] as int];
         if (at == null) {
@@ -1302,6 +1326,8 @@ Future<List<Object?>?> _read(
             final text = delta['partial_json'] as String;
             block.arguments = at.arguments!.append(text);
             stream.push(ToolCallDeltaEvent(at.index, text, output));
+          case 'input_json_delta' when block is ServerToolContent:
+            at.arguments!.append(delta['partial_json'] as String);
           case 'signature_delta' when block is ThinkingContent:
             block.signature = (block.signature ?? '') + (delta['signature'] as String);
         }
@@ -1325,6 +1351,10 @@ Future<List<Object?>?> _read(
             }
 
             stream.push(ToolCallEndEvent(at.index, block, output));
+          case ServerToolContent():
+            if (at.arguments!.text.isNotEmpty) {
+              block.block['input'] = at.arguments!.finish().arguments;
+            }
           case ImageContent():
             continue;
         }
