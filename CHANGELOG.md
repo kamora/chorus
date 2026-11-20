@@ -1,8 +1,9 @@
-## Unreleased
+## 0.2.0
 
 - Anthropic's server tools, such as web search: declared with `AnthropicOptions.serverTools`; their calls and results
   are kept as `ServerToolContent` (JSON type `serverTool`) and sent back unchanged in later turns. Other providers
   leave them out. Before, the Anthropic provider dropped every block it did not know.
+- Breaking: `Content` is sealed and gains `ServerToolContent`, so an exhaustive `switch` over it needs a case for it.
 
 ## 0.1.1
 
