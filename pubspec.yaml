@@ -9,18 +9,10 @@ environment:
 
 dependencies:
   anthropic_sdk_lite_dart: ^0.1.0
-  # Not on pub.dev yet.
-  google_sdk_lite_dart:
-    git:
-      url: https://github.com/kamora/google-sdk-lite-dart.git
-      ref: d8405ee2a669f80e7f7040f242e753a78d2d2da8
-  # Not on pub.dev yet.
-  openai_sdk_lite_dart:
-    git:
-      url: https://github.com/kamora/openai-sdk-lite-dart.git
-      ref: 7f54979a3b3800936b57c33f86bb11a7962298de
+  google_sdk_lite_dart: ^0.1.0
   http: ^1.6.0
   http_parser: ^4.1.2
+  openai_sdk_lite_dart: ^0.1.0
   pluto: ^0.0.1
 
 dev_dependencies:
