@@ -9,7 +9,9 @@ Work in progress. So far:
 - The Anthropic provider (`streamAnthropic`, `streamSimpleAnthropic`), built on
   [anthropic_sdk_lite_dart](https://pub.dev/packages/anthropic_sdk_lite_dart): prompt caching, thinking (budget and
   adaptive), tools, images, retries, aborts. Not yet: strict tools, message threads, mid-conversation effort, system
-  messages and tool changes, server-side fallback models and the model catalog.
+  messages and tool changes, and server-side fallback models.
+- pi's model catalog for Anthropic, OpenAI and Google (`builtinModels`), vendored in `catalog/` from pi's generator,
+  which builds it from [models.dev](https://models.dev); see `catalog/README.md`.
 - pi-agent-core's agent loop (`agentLoop`, `agentLoopContinue`, `runToolCall`): turns, tool calls in sequence or in
   parallel, before and after hooks, steering and follow-up messages, tool changes announced to the model. Tool
   arguments are coerced and validated against the tool's JSON Schema (`validateToolArguments`) with

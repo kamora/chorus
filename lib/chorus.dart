@@ -6,6 +6,7 @@ export 'src/agent/loop.dart' hide errorText;
 export 'src/agent/types.dart';
 export 'src/ai/event_stream.dart';
 export 'src/ai/model.dart';
+export 'src/ai/models.generated.dart';
 export 'src/ai/options.dart';
 export 'src/ai/providers/anthropic.dart'
     show AnthropicOptions, ProviderException, streamAnthropic, streamSimpleAnthropic;
