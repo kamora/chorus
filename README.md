@@ -22,6 +22,13 @@ Work in progress. So far:
 `dart test`. Most tests are ported from pi's own; `test/fixtures/pi-messages.json` holds messages taken from pi's
 session fixtures, with long texts trimmed. Nothing calls a real API.
 
+`tool/live.dart` runs live checks against the Anthropic API (a plain answer, a tool round trip through the Agent,
+adaptive thinking, and thinking sent back in a second turn); it costs a few cents' worth of tokens:
+
+```sh
+ANTHROPIC_API_KEY=... dart run tool/live.dart [model]
+```
+
 ## License
 
 MIT, like pi. Ported from pi, Copyright (c) 2025 Mario Zechner. See `LICENSE`.
