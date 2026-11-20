@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 
 import '../constrained.dart';
 import '../event_stream.dart';
+import '../hash.dart';
 import '../json.dart';
 import '../model.dart';
 import '../options.dart';
@@ -22,6 +23,7 @@ import '../session.dart';
 import '../transcript.dart';
 import '../transform.dart';
 import '../types.dart';
+import 'shared.dart';
 
 /// Options of the Anthropic provider, ported from pi's `AnthropicOptions`.
 class AnthropicOptions extends StreamOptions {
@@ -97,16 +99,6 @@ class AnthropicOptions extends StreamOptions {
   final Anthropic? client;
 }
 
-/// Thrown by the provider for a failure it detects itself; the message goes to the response's `errorMessage`.
-class ProviderException implements Exception {
-  const ProviderException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
 const _fineGrainedToolStreaming = 'fine-grained-tool-streaming-2025-05-14';
 const _interleavedThinking = 'interleaved-thinking-2025-05-14';
 const _midConversationOutputConfig = 'mid-conversation-output-config-2026-07-01';
@@ -173,11 +165,6 @@ class _Compat {
 
   static bool _openRouter(Model model) => model.provider == 'openrouter' || model.baseUrl.contains('openrouter.ai');
 }
-
-final _surrogates = RegExp(r'[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]');
-
-/// [text] without unpaired UTF-16 surrogates, which many APIs reject.
-String sanitizeSurrogates(String text) => text.replaceAll(_surrogates, '');
 
 /// A tool call id as Anthropic requires it: `[a-zA-Z0-9_-]`, at most 64 characters.
 String normalizeToolCallId(String id) {
@@ -587,7 +574,7 @@ Json buildParams(
   final cache = _cacheControl(model, options.cacheRetention);
   final compat = _Compat(model);
   final system = initialSystemMessage(messages);
-  final transformed = transformMessages(messages, model, normalizeToolCallId);
+  final transformed = transformMessages(messages, model, (id, _) => normalizeToolCallId(id));
   final tools = currentTools(messages);
   final native = _nativeToolChanges(model, messages);
   final betas = _betas(model, tools, options, native: native, threads: threads);
@@ -903,7 +890,7 @@ String _threadHash(Model model, Json params, List<Object?> messages) {
     params['betas'],
     params['fallbacks'],
   ]);
-  return _shortHash(settings + jsonEncode(_withoutCacheMarkers(messages)));
+  return shortHash(settings + jsonEncode(_withoutCacheMarkers(messages)));
 }
 
 // Cache markers move to the newest message from request to request, and a string content means one text block.
@@ -926,21 +913,6 @@ Object? _normalized(Object? key, Object? value) {
   }
 
   return _withoutCacheMarkers(value);
-}
-
-/// A fast deterministic hash (pi's `shortHash`): two 32-bit lanes over the UTF-16 units.
-String _shortHash(String text) {
-  int mul(int a, int b) => (a * b) & 0xffffffff;
-  var h1 = 0xdeadbeef;
-  var h2 = 0x41c6ce57;
-  for (final c in text.codeUnits) {
-    h1 = mul(h1 ^ c, 2654435761);
-    h2 = mul(h2 ^ c, 1597334677);
-  }
-
-  h1 = mul(h1 ^ (h1 >> 16), 2246822507) ^ mul(h2 ^ (h2 >> 13), 3266489909);
-  h2 = mul(h2 ^ (h2 >> 16), 2246822507) ^ mul(h1 ^ (h1 >> 13), 3266489909);
-  return h2.toRadixString(36) + h1.toRadixString(36);
 }
 
 /// A request in a session's thread.
@@ -1059,7 +1031,7 @@ void _recordThread(Model model, _ThreadRequest thread, Json params, AssistantMes
 
   // The reply converted as the next request will convert it, without the placeholder results of trailing tool calls.
   final reply = convertMessages(
-    transformMessages([output], model, normalizeToolCallId),
+    transformMessages([output], model, (id, _) => normalizeToolCallId(id)),
     null,
     emptySignature: _Compat(model).emptySignature,
   ).where((m) => m['role'] == 'assistant');

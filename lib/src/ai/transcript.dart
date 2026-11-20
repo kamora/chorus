@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'types.dart';
 
@@ -108,4 +109,57 @@ String renderSystemMessageUpdate(SystemMessage message) {
         if (after[t.name] != before[t.name]) t.name,
     ],
   );
+}
+
+/// How an API can express tool changes after the first request.
+enum ToolSupport {
+  /// Only the top-level tool list exists; it always holds the current tools.
+  none,
+
+  /// Tools can be added at a later message, but not removed or redefined.
+  additions,
+
+  /// Every tool, the first ones included, is declared in place, and a later declaration under the same name replaces
+  /// the earlier one. Removals cannot be sent, so they are announced as text and the tools stay declared.
+  changes,
+}
+
+/// How tool declarations split between the request's top-level tools and changes in place, ported from pi's
+/// `resolveTranscriptTools`: the top-level [tools], and the number of leading system messages whose changes they
+/// already hold ([folded]); every later system message carries its own.
+///
+/// With [ToolSupport.changes] the top-level list is empty. With [ToolSupport.additions] it is the tool state after the
+/// last removal or redefinition, which cannot be sent in place, so the cached prefix breaks once per removal rather
+/// than on every later addition. With [ToolSupport.none] it is the current tool set.
+({List<Tool> tools, int folded}) resolveTranscriptTools(List<Message> messages, ToolSupport support) {
+  final system = messages.whereType<SystemMessage>().toList();
+  switch (support) {
+    case ToolSupport.none:
+      return (tools: currentTools(system), folded: system.length);
+    case ToolSupport.changes:
+      return (tools: <Tool>[], folded: 0);
+    case ToolSupport.additions:
+      final folded = max(initialSystemMessage(messages) == null ? 0 : 1, _lastNonAdditiveChange(system) + 1);
+      return (tools: currentTools(system.sublist(0, folded)), folded: folded);
+  }
+}
+
+/// The index of the last system message that removes a tool or declares a name declared before (even after its
+/// removal), or -1.
+int _lastNonAdditiveChange(List<SystemMessage> messages) {
+  final declared = <String>{};
+  var last = -1;
+  for (final (index, message) in messages.indexed) {
+    if (message.removed?.isNotEmpty ?? false) {
+      last = index;
+    }
+
+    for (final tool in message.added ?? const <Tool>[]) {
+      if (!declared.add(tool.name)) {
+        last = index;
+      }
+    }
+  }
+
+  return last;
 }

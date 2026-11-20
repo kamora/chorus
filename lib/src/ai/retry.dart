@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:anthropic_sdk_lite_dart/anthropic_sdk_lite_dart.dart';
+import 'package:anthropic_sdk_lite_dart/anthropic_sdk_lite_dart.dart' as anthropic;
 import 'package:http_parser/http_parser.dart';
+import 'package:openai_sdk_lite_dart/openai_sdk_lite_dart.dart' as openai;
 
 import 'options.dart';
 
@@ -30,21 +31,38 @@ Future<T> retryRequest<T>(
   for (var attempt = 0; ; attempt++) {
     try {
       return await request();
-    } on APIError catch (error) {
+    } catch (error) {
+      final failure = _failure(error);
+      if (failure == null) {
+        rethrow;
+      }
+
       if (signal?.aborted ?? false) {
         throw const AbortedException();
       }
 
-      if (attempt >= (maxRetries ?? 0) || !_retryable(error)) {
+      if (attempt >= (maxRetries ?? 0) || !_retryable(failure)) {
         rethrow;
       }
 
-      await _sleep(_delay(error, attempt, maxDelay), signal);
+      await _sleep(_delay(failure, attempt, maxDelay), signal);
     }
   }
 }
 
-bool _retryable(APIError error) {
+/// What a retry reads from an SDK's API error.
+typedef _Failure = ({int? status, Map<String, String>? headers, String? message});
+
+/// [error] as a failure that may be retried: an API error of either SDK, or null for anything else.
+_Failure? _failure(Object error) {
+  return switch (error) {
+    anthropic.APIError() => (status: error.status, headers: error.headers, message: error.message),
+    openai.APIError() => (status: error.status, headers: error.headers, message: error.message),
+    _ => null,
+  };
+}
+
+bool _retryable(_Failure error) {
   final should = error.headers?['x-should-retry'];
   if (should == 'true') {
     return true;
@@ -62,7 +80,7 @@ bool _retryable(APIError error) {
   return status == 408 || status == 409 || status == 429 || status >= 500;
 }
 
-Duration _delay(APIError error, int attempt, Duration? maxDelay) {
+Duration _delay(_Failure error, int attempt, Duration? maxDelay) {
   final ms = double.tryParse(error.headers?['retry-after-ms'] ?? '');
   if (ms != null && ms.isFinite) {
     return _allowed(Duration(microseconds: (ms * 1000).round()), maxDelay, error);
@@ -84,7 +102,7 @@ Duration _delay(APIError error, int attempt, Duration? maxDelay) {
   return Duration(microseconds: (min(0.5 * pow(2, attempt), 8) * 1e6 * (1 - _random.nextDouble() * 0.25)).round());
 }
 
-Duration _allowed(Duration delay, Duration? maxDelay, APIError error) {
+Duration _allowed(Duration delay, Duration? maxDelay, _Failure error) {
   final limit = maxDelay ?? const Duration(minutes: 1);
   if (limit > Duration.zero && delay > limit) {
     throw Exception(

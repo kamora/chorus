@@ -9,9 +9,11 @@ export 'src/ai/event_stream.dart';
 export 'src/ai/model.dart';
 export 'src/ai/options.dart';
 export 'src/ai/overflow.dart';
-export 'src/ai/providers/anthropic.dart'
-    show AnthropicOptions, ProviderException, streamAnthropic, streamSimpleAnthropic;
+export 'src/ai/providers/anthropic.dart' show AnthropicOptions, streamAnthropic, streamSimpleAnthropic;
 export 'src/ai/providers/faux.dart';
+export 'src/ai/providers/openai_responses.dart'
+    show OpenAIResponsesOptions, streamOpenAIResponses, streamSimpleOpenAIResponses;
+export 'src/ai/providers/shared.dart' show ProviderException;
 export 'src/ai/registry.dart';
 export 'src/ai/retry.dart' show AbortedException;
 export 'src/ai/session.dart' show cleanupSessionResources, registerSessionCleanup;

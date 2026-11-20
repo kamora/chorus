@@ -144,7 +144,7 @@ void main() {
           ToolResultMessage(id: 'call|1', name: 'bash', content: [TextContent('ok')], isError: false, timestamp: 1),
         ],
         kimi,
-        (id) => id.replaceAll('|', '_'),
+        (id, _) => id.replaceAll('|', '_'),
       );
 
       expect((result[1] as AssistantMessage).content.whereType<ToolCall>().single.id, 'call_1');

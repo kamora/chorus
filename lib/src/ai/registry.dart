@@ -6,6 +6,7 @@ import 'model.dart';
 import 'models.generated.dart';
 import 'options.dart';
 import 'providers/anthropic.dart';
+import 'providers/openai_responses.dart';
 import 'types.dart';
 
 /// Streams one API: [stream] with the API's own options, [streamSimple] with the provider-neutral ones.
@@ -159,8 +160,28 @@ Provider anthropicProvider() {
   );
 }
 
+/// The built-in OpenAI provider: the catalog's OpenAI models on the Responses API.
+Provider openaiProvider() {
+  return Provider(
+    id: 'openai',
+    name: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    models: getBuiltinModels('openai'),
+    apis: {
+      'openai-responses': ProviderStreams(
+        stream: (model, messages, options) => streamOpenAIResponses(
+          model,
+          messages,
+          options is OpenAIResponsesOptions ? options : OpenAIResponsesOptions.from(options),
+        ),
+        streamSimple: streamSimpleOpenAIResponses,
+      ),
+    },
+  );
+}
+
 /// Every built-in provider chorus has an API for, freshly built.
-List<Provider> builtinProviders() => [anthropicProvider()];
+List<Provider> builtinProviders() => [anthropicProvider(), openaiProvider()];
 
 /// A collection with every built-in provider registered.
 Models builtinModels() {

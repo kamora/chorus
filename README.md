@@ -8,8 +8,15 @@ Work in progress. So far:
 - pi-ai's message, content and event types, which read and write pi's JSON, and the event stream of one response.
 - The Anthropic provider (`streamAnthropic`, `streamSimpleAnthropic`), built on
   [anthropic_sdk_lite_dart](https://pub.dev/packages/anthropic_sdk_lite_dart): prompt caching, thinking (budget and
-  adaptive), tools, images, retries, aborts. Not yet: strict tools, message threads, mid-conversation effort, system
-  messages and tool changes, and server-side fallback models.
+  adaptive), tools and strict tools, images, retries, aborts, message threads, mid-conversation effort, system
+  messages and tool changes in place, and server-side fallback models.
+- The OpenAI Responses provider (`streamOpenAIResponses`, `streamSimpleOpenAIResponses`), built on
+  [openai_sdk_lite_dart](https://github.com/kamora/openai-sdk-lite-dart): reasoning with its encrypted items replayed
+  across turns, tools and strict tools, images, prompt caching with session headers, service tier pricing,
+  mid-conversation effort and system messages, tool changes as `additional_tools` or client tool search, retries,
+  aborts. Not ported: grammar tools, Sign in with ChatGPT, sampling parameters.
+- A scripted provider for tests (`FauxProvider`), and pi's utilities: context overflow detection, the cache warming
+  policy, uuidv7.
 - pi's model catalog for Anthropic, OpenAI and Google (`getBuiltinModel`, `getBuiltinModels`), vendored in `catalog/`
   from pi's generator, which builds it from [models.dev](https://models.dev); see `catalog/README.md`.
 - Providers and the collection that routes requests to them (`Provider`, `Models`, `builtinModels()`): `stream`,

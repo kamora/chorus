@@ -106,11 +106,16 @@ AssistantMessage _withContent(AssistantMessage m, List<Content> content) {
 /// Prepares a transcript for [model], ported from pi's `transformMessages`.
 ///
 /// Images become placeholders for models without image input. Thinking from another model is dropped, and so are
-/// its tool calls' thought signatures; their ids go through [normalizeId], and tool results follow the new ids.
+/// its tool calls' thought signatures; their ids go through [normalizeId], given the message they come from, and tool
+/// results follow the new ids.
 /// Errored and aborted assistant messages are skipped. A tool call with no result gets an error result saying none
 /// was provided, before the next assistant or user message; system messages between a call and its results move
 /// after them.
-List<Message> transformMessages(List<Message> messages, Model model, [String Function(String id)? normalizeId]) {
+List<Message> transformMessages(
+  List<Message> messages,
+  Model model, [
+  String Function(String id, AssistantMessage source)? normalizeId,
+]) {
   final ids = <String, String>{};
   final transformed = <Message>[];
   for (final m in _downgradeImages(messages, model)) {
@@ -145,7 +150,7 @@ List<Message> transformMessages(List<Message> messages, Model model, [String Fun
             case ToolCall():
               var id = block.id;
               if (!same && normalizeId != null) {
-                id = normalizeId(block.id);
+                id = normalizeId(block.id, m);
               }
 
               if (id != block.id) {
