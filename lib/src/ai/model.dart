@@ -208,11 +208,13 @@ class Model {
   final InputLimits? inputLimits;
 }
 
-/// Sets [usage]'s cost from [model]'s prices; Anthropic charges twice the input price for 1h cache writes.
-Cost calculateCost(Model model, Usage usage) {
-  Rates rates = model.cost;
+/// Sets [usage]'s cost from [model]'s prices, or [prices] when another model's apply (a fallback model answered);
+/// Anthropic charges twice the input price for 1h cache writes.
+Cost calculateCost(Model model, Usage usage, {ModelCost? prices}) {
+  final billed = prices ?? model.cost;
+  Rates rates = billed;
   var threshold = -1;
-  for (final tier in model.cost.tiers) {
+  for (final tier in billed.tiers) {
     if (usage.input + usage.cacheRead + usage.cacheWrite > tier.above && tier.above > threshold) {
       rates = tier;
       threshold = tier.above;

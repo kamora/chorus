@@ -110,6 +110,7 @@ const _interleavedThinking = 'interleaved-thinking-2025-05-14';
 const _midConversationOutputConfig = 'mid-conversation-output-config-2026-07-01';
 const _thinkingBindingControls = 'thinking-binding-controls-2026-08-01';
 const _inlineTools = 'inline-tools-2026-09-15';
+const _serverSideFallback = 'server-side-fallback-2026-07-01';
 
 /// A deferred tool declared whenever tool changes are native. Anthropic adds hidden prompt scaffolding for tool changes
 /// mid-conversation; declaring this from the first request keeps it in the cached prefix, so the first tool change does
@@ -138,7 +139,8 @@ class _Compat {
       midEffort = model.compat['supportsMidConvoEffort'] as bool? ?? false,
       strictTools = model.compat['supportsStrictTools'] as bool? ?? false,
       midSystem = model.compat['supportsMidConvoSystemMessages'] as bool? ?? false,
-      midTools = model.compat['supportsMidConvoToolChanges'] as bool? ?? false;
+      midTools = model.compat['supportsMidConvoToolChanges'] as bool? ?? false,
+      fallbacks = (model.compat['allowedFallbackModels'] as List<Object?>? ?? const []).cast<Json>();
 
   final bool eagerToolInput;
   final bool longCache;
@@ -158,6 +160,9 @@ class _Compat {
 
   /// Tool changes are sent in place, with native system messages.
   final bool midTools;
+
+  /// The models the API may fall back to: `provider`, `model`, and the `cost` the caller is billed.
+  final List<Json> fallbacks;
 
   static bool _openRouter(Model model) => model.provider == 'openrouter' || model.baseUrl.contains('openrouter.ai');
 }
@@ -550,6 +555,7 @@ List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options, {bo
     if (model.reasoning && options.thinkingEnabled == true && (options.interleavedThinking ?? true) && !compat.adaptive)
       _interleavedThinking,
     if (compat.midEffort) ...[_midConversationOutputConfig, _thinkingBindingControls],
+    if (compat.fallbacks.isNotEmpty) _serverSideFallback,
     if (native) _inlineTools,
   }.toList();
 }
@@ -652,6 +658,12 @@ Json buildParams(Model model, List<Message> messages, AnthropicOptions options, 
   final choice = options.toolChoice;
   if (choice != null) {
     params['tool_choice'] = choice is String ? {'type': choice} : choice;
+  }
+
+  if (compat.fallbacks.isNotEmpty) {
+    params['fallbacks'] = [
+      for (final f in compat.fallbacks) {'model': f['model']},
+    ];
   }
 
   return params;
@@ -946,10 +958,13 @@ Future<void> _read(
 ) async {
   final open = <int, _Open>{};
 
+  // The prices billed: an allowed fallback model's when it answered instead.
+  ModelCost? fallbackCost;
+
   void total() {
     final u = output.usage;
     u.totalTokens = u.input + u.output + u.cacheRead + u.cacheWrite;
-    calculateCost(model, u);
+    calculateCost(model, u, prices: fallbackCost);
   }
 
   await for (final event in anthropicEvents(body)) {
@@ -961,6 +976,12 @@ Future<void> _read(
         final answered = message['model'] as String?;
         if (answered != null && answered != model.id) {
           output.responseModel = answered;
+          final fallback = _Compat(model).fallbacks.where((f) {
+            return f['provider'] == model.provider && f['model'] == answered;
+          }).firstOrNull;
+          if (fallback?['cost'] case final Json cost) {
+            fallbackCost = ModelCost.fromJson(cost);
+          }
         }
 
         // Usage from the start, so an aborted stream still counts the input.

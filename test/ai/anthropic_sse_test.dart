@@ -102,6 +102,87 @@ void main() {
       );
     });
 
+    test('uses a returned fallback model for cost attribution', () async {
+      final model = claude(
+        id: 'claude-opus-5',
+        compat: const {
+          'allowedFallbackModels': [
+            {
+              'provider': 'anthropic',
+              'model': 'fallback-model',
+              'cost': {'input': 3, 'output': 5, 'cacheRead': 0, 'cacheWrite': 0},
+            },
+          ],
+        },
+      );
+      final result = await run(
+        model,
+        [user('Hello')],
+        FakeServer(
+          sse([
+            start('msg_response_model', model: 'fallback-model', usage: {'input_tokens': 100, 'output_tokens': 0}),
+            {
+              'type': 'content_block_start',
+              'index': 0,
+              'content_block': {'type': 'text', 'text': 'done'},
+            },
+            {'type': 'content_block_stop', 'index': 0},
+            delta('end_turn', {'input_tokens': 100, 'output_tokens': 20}),
+            {'type': 'message_stop'},
+          ]),
+        ),
+      );
+
+      expect(result.model, 'claude-opus-5');
+      expect(result.responseModel, 'fallback-model');
+      expect(result.usage.cost.input, closeTo(0.0003, 1e-10));
+      expect(result.usage.cost.output, closeTo(0.0001, 1e-10));
+    });
+
+    test('bills its own prices when a model outside the fallback list answers', () async {
+      // The answering model is listed, but for another provider.
+      final result = await run(
+        claude(
+          id: 'claude-opus-5',
+          compat: const {
+            'allowedFallbackModels': [
+              {
+                'provider': 'other-provider',
+                'model': 'another-model',
+                'cost': {'input': 3, 'output': 5, 'cacheRead': 0, 'cacheWrite': 0},
+              },
+            ],
+          },
+        ),
+        [user('Hello')],
+        FakeServer(
+          sse([
+            start('msg', model: 'another-model', usage: {'input_tokens': 100, 'output_tokens': 0}),
+            delta('end_turn', {'input_tokens': 100, 'output_tokens': 20}),
+            {'type': 'message_stop'},
+          ]),
+        ),
+      );
+
+      // claude()'s prices: $5 input and $25 output per million tokens.
+      expect(result.usage.cost.input, closeTo(0.0005, 1e-10));
+      expect(result.usage.cost.output, closeTo(0.0005, 1e-10));
+    });
+
+    test('offers the allowed fallback models with their beta', () async {
+      final server = FakeServer(sse(minimalEvents()));
+      await run(getBuiltinModel('anthropic', 'claude-fable-5-2')!, [user('Hello')], server);
+      expect(server.body['fallbacks'], [
+        {'model': 'claude-opus-5'},
+      ]);
+      expect(server.requests.single.headers['anthropic-beta'], contains('server-side-fallback-2026-07-01'));
+
+      final plain = FakeServer(sse(minimalEvents()));
+      await run(claude(), [user('Hello')], plain);
+      expect(plain.body.containsKey('fallbacks'), isFalse);
+      expect(plain.requests.single.headers['anthropic-beta'] ?? '', isNot(contains('server-side-fallback')));
+    });
+
     test('fails safely when Anthropic falls back after output begins', () async {
       final result = await run(
         claude(),
