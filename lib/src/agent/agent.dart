@@ -94,7 +94,12 @@ class Agent {
         0,
         SystemMessage(
           [if (systemPrompt?.isNotEmpty ?? false) TextContent(systemPrompt!)],
-          added: tools.isEmpty ? null : [for (final t in tools) Tool(t.name, t.description, t.parameters)],
+          added: tools.isEmpty
+              ? null
+              : [
+                  for (final t in tools)
+                    Tool(t.name, t.description, t.parameters, constrainedSampling: t.constrainedSampling),
+                ],
           timestamp: 0,
         ),
       );

@@ -102,10 +102,16 @@ Future<void> main(List<String> args) async {
   );
   await older.promptText('Is 391 prime? Answer yes or no.');
   final budgeted = older.messages.last as AssistantMessage;
-  check('budget thinking (${budget.id})', switch (_generation(budgetRequests.requests.first.body)['thinkingConfig']) {
-    {'thinkingBudget': final int tokens} => tokens > 0 && text(budgeted).toLowerCase().startsWith('no'),
-    _ => false,
-  }, budgeted);
+
+  // Gemini 2.5, the models that think within a budget, is no longer offered to new users (November 2026).
+  if (budgeted.errorMessage?.contains('no longer available') ?? false) {
+    stdout.writeln('skip budget thinking (${budget.id}): the model is not available to this key');
+  } else {
+    check('budget thinking (${budget.id})', switch (_generation(budgetRequests.requests.first.body)['thinkingConfig']) {
+      {'thinkingBudget': final int tokens} => tokens > 0 && text(budgeted).toLowerCase().startsWith('no'),
+      _ => false,
+    }, budgeted);
+  }
 
   // A system prompt well above Gemini's implicit cache minimum, sent twice; Gemini caches implicitly, so a hit is
   // likely but not promised.

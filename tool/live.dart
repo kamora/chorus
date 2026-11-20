@@ -141,6 +141,9 @@ Future<void> main(List<String> args) async {
 
   // Beta features, in one conversation: the second turn raises the effort and adds a tool and a system message.
   final recorder = Recorder();
+
+  // Each request as built, before a message thread cuts it down to the messages the server does not hold yet.
+  final payloads = <Json>[];
   final beta = Agent(
     model: model,
     systemPrompt: 'Use the tools for arithmetic, then answer with the number only.',
@@ -151,6 +154,10 @@ Future<void> main(List<String> args) async {
       maxTokens: 4000,
       httpClient: recorder,
       sessionId: 'chorus-live-threads-${DateTime.now().millisecondsSinceEpoch}',
+      onPayload: (payload, _) {
+        payloads.add(jsonDecode(jsonEncode(payload)) as Json);
+        return null;
+      },
     ),
     stream: models.streamSimple,
   );
@@ -177,7 +184,7 @@ Future<void> main(List<String> args) async {
   final product = beta.messages.last as AssistantMessage;
   final changed = recorder.requests[firstTurn];
   final efforts = [
-    for (final m in changed.body['messages'] as List<Object?>)
+    for (final m in payloads[firstTurn]['messages'] as List<Object?>)
       if (m case {'output_config': {'effort': final String effort}}) effort,
   ];
   stdout.writeln('     efforts in the 2nd turn: $efforts');

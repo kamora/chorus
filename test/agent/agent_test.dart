@@ -93,6 +93,34 @@ String role(Object? message) {
 Future<void> tick([int ms = 10]) => Future<void>.delayed(Duration(milliseconds: ms));
 
 void main() {
+  // Found live: the declaration dropped constrainedSampling, so the first request announced the tool as changed.
+  test('a strict tool is declared strict from the start, with no change announced', () async {
+    final faux = FauxProvider();
+    final models = Models()..setProvider(faux.provider);
+    faux.setResponses([fauxAssistantMessage('one'), fauxAssistantMessage('two')]);
+    final agent = Agent(
+      model: faux.getModel()!,
+      systemPrompt: 'sys',
+      tools: [
+        AgentTool(
+          name: 'add',
+          description: 'Adds.',
+          parameters: const {'type': 'object', 'properties': <String, Object?>{}},
+          constrainedSampling: const JsonSchemaSampling(Strictness.require),
+          execute: (id, args, signal, onUpdate) async => AgentToolResult([TextContent('0')]),
+        ),
+      ],
+      stream: models.streamSimple,
+    );
+    expect(
+      (agent.messages.single as SystemMessage).added!.single.constrainedSampling,
+      isA<JsonSchemaSampling>().having((s) => s.strict, 'strict', Strictness.require),
+    );
+    await agent.promptText('hi');
+    await agent.promptText('again');
+    expect(agent.messages.whereType<SystemMessage>(), hasLength(1));
+  });
+
   group('Agent', () {
     test('should create an agent instance with default state', () {
       final agent = Agent(stream: unused);

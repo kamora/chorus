@@ -56,7 +56,8 @@ Future<void> main(List<String> args) async {
     sum,
   );
 
-  final thinking = Agent(model: model, level: ThinkingLevel.low, options: options, stream: models.streamSimple);
+  // Medium: at low effort gpt-6-luna answers this without reasoning at all.
+  final thinking = Agent(model: model, level: ThinkingLevel.medium, options: options, stream: models.streamSimple);
   await thinking.promptText('Is 391 prime? Answer yes or no.');
   final first = thinking.messages.last as AssistantMessage;
   check(
