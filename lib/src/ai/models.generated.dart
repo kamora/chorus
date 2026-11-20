@@ -36,6 +36,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         ],
       },
       cost: ModelCost(input: 10.0, output: 50.0, cacheRead: 1.0, cacheWrite: 12.5),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-fable-5-1': Model(
       id: 'claude-fable-5-1',
@@ -56,6 +64,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         'supportsStrictTools': true,
       },
       cost: ModelCost(input: 10.0, output: 50.0, cacheRead: 0.25, cacheWrite: 12.5),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-fable-5-2': Model(
       id: 'claude-fable-5-2',
@@ -83,6 +99,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         ],
       },
       cost: ModelCost(input: 8.0, output: 40.0, cacheRead: 0.2, cacheWrite: 10.0),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-haiku-4-5': Model(
       id: 'claude-haiku-4-5',
@@ -96,6 +120,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 64000,
       compat: {'supportsStrictTools': true},
       cost: ModelCost(input: 1.0, output: 5.0, cacheRead: 0.1, cacheWrite: 1.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 100,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-haiku-4-5-20251001': Model(
       id: 'claude-haiku-4-5-20251001',
@@ -109,6 +141,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 64000,
       compat: {'supportsStrictTools': true},
       cost: ModelCost(input: 1.0, output: 5.0, cacheRead: 0.1, cacheWrite: 1.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 100,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-haiku-5-5': Model(
       id: 'claude-haiku-5-5',
@@ -136,6 +176,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.125,
         tiers: [Tier(above: 100000, input: 0.5, output: 2.5, cacheRead: 0.05, cacheWrite: 0.625)],
       ),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-opus-4-5': Model(
       id: 'claude-opus-4-5',
@@ -149,6 +197,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 64000,
       compat: {'supportsStrictTools': true},
       cost: ModelCost(input: 5.0, output: 25.0, cacheRead: 0.5, cacheWrite: 6.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 100,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-opus-4-5-20251101': Model(
       id: 'claude-opus-4-5-20251101',
@@ -162,6 +218,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 64000,
       compat: {'supportsStrictTools': true},
       cost: ModelCost(input: 5.0, output: 25.0, cacheRead: 0.5, cacheWrite: 6.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 100,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-opus-4-6': Model(
       id: 'claude-opus-4-6',
@@ -176,6 +240,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'forceAdaptiveThinking': true, 'supportsStrictTools': true},
       cost: ModelCost(input: 5.0, output: 25.0, cacheRead: 0.5, cacheWrite: 6.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-opus-4-7': Model(
       id: 'claude-opus-4-7',
@@ -190,6 +262,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'forceAdaptiveThinking': true, 'supportsTemperature': false, 'supportsStrictTools': true},
       cost: ModelCost(input: 5.0, output: 25.0, cacheRead: 0.5, cacheWrite: 6.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-opus-4-8': Model(
       id: 'claude-opus-4-8',
@@ -210,6 +290,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         'supportsStrictTools': true,
       },
       cost: ModelCost(input: 5.0, output: 25.0, cacheRead: 0.5, cacheWrite: 6.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-opus-5': Model(
       id: 'claude-opus-5',
@@ -231,6 +319,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         'supportsStrictTools': true,
       },
       cost: ModelCost(input: 5.0, output: 25.0, cacheRead: 0.5, cacheWrite: 6.25),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-opus-5-5': Model(
       id: 'claude-opus-5-5',
@@ -260,6 +356,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         'supportsStrictTools': true,
       },
       cost: ModelCost(input: 4.0, output: 20.0, cacheRead: 0.2, cacheWrite: 5.0),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-sonnet-4-5': Model(
       id: 'claude-sonnet-4-5',
@@ -273,6 +377,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 64000,
       compat: {'supportsStrictTools': true},
       cost: ModelCost(input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 100,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-sonnet-4-5-20250929': Model(
       id: 'claude-sonnet-4-5-20250929',
@@ -286,6 +398,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 64000,
       compat: {'supportsStrictTools': true},
       cost: ModelCost(input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 100,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-sonnet-4-6': Model(
       id: 'claude-sonnet-4-6',
@@ -300,6 +420,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'forceAdaptiveThinking': true, 'supportsStrictTools': true},
       cost: ModelCost(input: 3.0, output: 15.0, cacheRead: 0.3, cacheWrite: 3.75),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-sonnet-5': Model(
       id: 'claude-sonnet-5',
@@ -314,6 +442,14 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'forceAdaptiveThinking': true, 'supportsTemperature': false, 'supportsStrictTools': true},
       cost: ModelCost(input: 2.0, output: 10.0, cacheRead: 0.2, cacheWrite: 2.5),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'claude-sonnet-5-5': Model(
       id: 'claude-sonnet-5-5',
@@ -343,6 +479,14 @@ const builtinCatalog = <String, Map<String, Model>>{
         'supportsStrictTools': true,
       },
       cost: ModelCost(input: 2.0, output: 10.0, cacheRead: 0.1, cacheWrite: 2.5),
+      promptCache: PromptCache(short: 300, long: 3600),
+      inputLimits: InputLimits(
+        maxRequestBytes: 33554432,
+        images: ImageLimits(
+          maxPerRequest: 600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
   },
   'google': {
@@ -363,6 +507,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.0,
         tiers: [Tier(above: 200000, input: 4.0, output: 18.0, cacheRead: 0.4, cacheWrite: 0.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'deep-research-preview-04-2026': Model(
       id: 'deep-research-preview-04-2026',
@@ -381,6 +532,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.0,
         tiers: [Tier(above: 200000, input: 4.0, output: 18.0, cacheRead: 0.4, cacheWrite: 0.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-2.5-computer-use-preview-10-2025': Model(
       id: 'gemini-2.5-computer-use-preview-10-2025',
@@ -393,6 +551,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 128000,
       maxTokens: 64000,
       cost: ModelCost(input: 1.25, output: 10.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-2.5-flash': Model(
       id: 'gemini-2.5-flash',
@@ -405,6 +570,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-2.5-flash-lite': Model(
       id: 'gemini-2.5-flash-lite',
@@ -417,6 +589,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-2.5-pro': Model(
       id: 'gemini-2.5-pro',
@@ -434,6 +613,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.125,
         cacheWrite: 0.0,
         tiers: [Tier(above: 200000, input: 2.5, output: 15.0, cacheRead: 0.25, cacheWrite: 0.0)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gemini-3-flash-preview': Model(
@@ -456,6 +642,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.5, output: 3.0, cacheRead: 0.05, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.1-flash-lite': Model(
       id: 'gemini-3.1-flash-lite',
@@ -477,6 +670,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.25, output: 1.5, cacheRead: 0.025, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.1-flash-lite-preview': Model(
       id: 'gemini-3.1-flash-lite-preview',
@@ -498,6 +698,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.25, output: 1.5, cacheRead: 0.025, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.1-pro-preview': Model(
       id: 'gemini-3.1-pro-preview',
@@ -524,6 +731,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.2,
         cacheWrite: 0.0,
         tiers: [Tier(above: 200000, input: 4.0, output: 18.0, cacheRead: 0.4, cacheWrite: 0.0)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gemini-3.1-pro-preview-customtools': Model(
@@ -552,6 +766,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.0,
         tiers: [Tier(above: 200000, input: 4.0, output: 18.0, cacheRead: 0.4, cacheWrite: 0.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.5-flash': Model(
       id: 'gemini-3.5-flash',
@@ -573,6 +794,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 1.5, output: 9.0, cacheRead: 0.15, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.5-flash-lite': Model(
       id: 'gemini-3.5-flash-lite',
@@ -594,6 +822,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.6-flash': Model(
       id: 'gemini-3.6-flash',
@@ -615,6 +850,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.7-flash': Model(
       id: 'gemini-3.7-flash',
@@ -636,6 +878,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-3.8-flash': Model(
       id: 'gemini-3.8-flash',
@@ -657,6 +906,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-4-argon': Model(
       id: 'gemini-4-argon',
@@ -678,6 +934,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 32768,
       cost: ModelCost(input: 2.0, output: 10.0, cacheRead: 0.1, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-4-carbon': Model(
       id: 'gemini-4-carbon',
@@ -699,6 +962,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 32768,
       cost: ModelCost(input: 2.0, output: 10.0, cacheRead: 0.1, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-4-hydrogen': Model(
       id: 'gemini-4-hydrogen',
@@ -720,6 +990,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 1.5, output: 7.5, cacheRead: 0.075, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-4-neon': Model(
       id: 'gemini-4-neon',
@@ -741,6 +1018,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 3.0, output: 15.0, cacheRead: 0.15, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-flash-latest': Model(
       id: 'gemini-flash-latest',
@@ -762,6 +1046,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 1.5, output: 9.0, cacheRead: 0.15, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-flash-lite-latest': Model(
       id: 'gemini-flash-lite-latest',
@@ -783,6 +1074,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 1048576,
       maxTokens: 65536,
       cost: ModelCost(input: 0.25, output: 1.5, cacheRead: 0.025, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-pro-latest': Model(
       id: 'gemini-pro-latest',
@@ -810,6 +1108,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.0,
         tiers: [Tier(above: 200000, input: 4.0, output: 18.0, cacheRead: 0.4, cacheWrite: 0.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemini-robotics-er-2-preview': Model(
       id: 'gemini-robotics-er-2-preview',
@@ -831,6 +1136,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 131072,
       maxTokens: 65536,
       cost: ModelCost(input: 1.0, output: 5.0, cacheRead: 0.1, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemma-4-26b-a4b-it': Model(
       id: 'gemma-4-26b-a4b-it',
@@ -844,6 +1156,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 262144,
       maxTokens: 32768,
       cost: ModelCost(input: 0.0, output: 0.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gemma-4-31b-it': Model(
       id: 'gemma-4-31b-it',
@@ -857,6 +1176,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       contextWindow: 262144,
       maxTokens: 32768,
       cost: ModelCost(input: 0.0, output: 0.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 20971520,
+        images: ImageLimits(
+          maxPerRequest: 3600,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
   },
   'openai': {
@@ -872,6 +1198,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 5.0, output: 30.0, cacheRead: 0.5, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4': Model(
       id: 'gpt-4',
@@ -898,6 +1231,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 4096,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 10.0, output: 30.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4.1': Model(
       id: 'gpt-4.1',
@@ -911,6 +1251,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 32768,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 2.0, output: 8.0, cacheRead: 0.5, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4.1-mini': Model(
       id: 'gpt-4.1-mini',
@@ -924,6 +1271,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 32768,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4.1-nano': Model(
       id: 'gpt-4.1-nano',
@@ -937,6 +1291,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 32768,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 0.1, output: 0.4, cacheRead: 0.025, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4o': Model(
       id: 'gpt-4o',
@@ -950,6 +1311,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 16384,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 2.5, output: 10.0, cacheRead: 1.25, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4o-2024-05-13': Model(
       id: 'gpt-4o-2024-05-13',
@@ -963,6 +1331,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 4096,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 5.0, output: 15.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4o-2024-08-06': Model(
       id: 'gpt-4o-2024-08-06',
@@ -976,6 +1351,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 16384,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 2.5, output: 10.0, cacheRead: 1.25, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4o-2024-11-20': Model(
       id: 'gpt-4o-2024-11-20',
@@ -989,6 +1371,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 16384,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 2.5, output: 10.0, cacheRead: 1.25, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-4o-mini': Model(
       id: 'gpt-4o-mini',
@@ -1002,6 +1391,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 16384,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 0.15, output: 0.6, cacheRead: 0.075, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5': Model(
       id: 'gpt-5',
@@ -1024,6 +1420,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 1.25, output: 10.0, cacheRead: 0.125, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5-chat-latest': Model(
       id: 'gpt-5-chat-latest',
@@ -1038,6 +1441,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 16384,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 1.25, output: 10.0, cacheRead: 0.125, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5-mini': Model(
       id: 'gpt-5-mini',
@@ -1060,6 +1470,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 0.25, output: 2.0, cacheRead: 0.025, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5-nano': Model(
       id: 'gpt-5-nano',
@@ -1082,6 +1499,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 0.05, output: 0.4, cacheRead: 0.005, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5-pro': Model(
       id: 'gpt-5-pro',
@@ -1096,6 +1520,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 15.0, output: 120.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.1': Model(
       id: 'gpt-5.1',
@@ -1118,6 +1549,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 1.25, output: 10.0, cacheRead: 0.125, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.2': Model(
       id: 'gpt-5.2',
@@ -1140,6 +1578,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 1.75, output: 14.0, cacheRead: 0.175, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.2-pro': Model(
       id: 'gpt-5.2-pro',
@@ -1162,6 +1607,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 21.0, output: 168.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.3-codex': Model(
       id: 'gpt-5.3-codex',
@@ -1184,6 +1636,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 1.75, output: 14.0, cacheRead: 0.175, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.3-codex-spark': Model(
       id: 'gpt-5.3-codex-spark',
@@ -1206,6 +1665,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 32000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 1.75, output: 14.0, cacheRead: 0.175, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.4': Model(
       id: 'gpt-5.4',
@@ -1234,6 +1700,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.0,
         tiers: [Tier(above: 272000, input: 5.0, output: 22.5, cacheRead: 0.5, cacheWrite: 0.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.4-mini': Model(
       id: 'gpt-5.4-mini',
@@ -1256,6 +1729,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true, 'supportsMidConvoSystemMessages': true},
       cost: ModelCost(input: 0.75, output: 4.5, cacheRead: 0.075, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.4-nano': Model(
       id: 'gpt-5.4-nano',
@@ -1278,6 +1758,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true},
       cost: ModelCost(input: 0.2, output: 1.25, cacheRead: 0.02, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.4-pro': Model(
       id: 'gpt-5.4-pro',
@@ -1305,6 +1792,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.0,
         cacheWrite: 0.0,
         tiers: [Tier(above: 272000, input: 60.0, output: 270.0, cacheRead: 0.0, cacheWrite: 0.0)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gpt-5.5': Model(
@@ -1334,6 +1828,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.0,
         tiers: [Tier(above: 272000, input: 10.0, output: 45.0, cacheRead: 1.0, cacheWrite: 0.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.5-pro': Model(
       id: 'gpt-5.5-pro',
@@ -1362,6 +1863,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 0.0,
         tiers: [Tier(above: 272000, input: 60.0, output: 270.0, cacheRead: 0.0, cacheWrite: 0.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.6-cyber': Model(
       id: 'gpt-5.6-cyber',
@@ -1384,6 +1892,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true, 'supportsExplicitPromptCacheMode': true},
       cost: ModelCost(input: 12.5, output: 75.0, cacheRead: 1.25, cacheWrite: 15.625),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.6-luna': Model(
       id: 'gpt-5.6-luna',
@@ -1418,6 +1933,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.02,
         cacheWrite: 0.25,
         tiers: [Tier(above: 272000, input: 0.4, output: 1.8, cacheRead: 0.04, cacheWrite: 0.5)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gpt-5.6-sol': Model(
@@ -1454,6 +1976,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 5.0,
         tiers: [Tier(above: 272000, input: 8.0, output: 30.0, cacheRead: 0.8, cacheWrite: 10.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-5.6-terra': Model(
       id: 'gpt-5.6-terra',
@@ -1488,6 +2017,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.2,
         cacheWrite: 2.5,
         tiers: [Tier(above: 272000, input: 4.0, output: 18.0, cacheRead: 0.4, cacheWrite: 5.0)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gpt-6-astra': Model(
@@ -1525,6 +2061,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 12.5,
         tiers: [Tier(above: 272000, input: 20.0, output: 75.0, cacheRead: 2.0, cacheWrite: 25.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-6-cyber': Model(
       id: 'gpt-6-cyber',
@@ -1547,6 +2090,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsOpenAIGrammarTools': true, 'supportsExplicitPromptCacheMode': true},
       cost: ModelCost(input: 20.0, output: 100.0, cacheRead: 2.0, cacheWrite: 25.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-6-luna': Model(
       id: 'gpt-6-luna',
@@ -1582,6 +2132,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.01,
         cacheWrite: 0.125,
         tiers: [Tier(above: 272000, input: 0.2, output: 0.75, cacheRead: 0.02, cacheWrite: 0.25)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gpt-6-sol': Model(
@@ -1619,6 +2176,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 2.5,
         tiers: [Tier(above: 272000, input: 4.0, output: 15.0, cacheRead: 0.4, cacheWrite: 5.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-6.1-sol': Model(
       id: 'gpt-6.1-sol',
@@ -1654,6 +2218,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.1,
         cacheWrite: 2.5,
         tiers: [Tier(above: 272000, input: 4.0, output: 15.0, cacheRead: 0.2, cacheWrite: 5.0)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gpt-6.1-terra': Model(
@@ -1691,6 +2262,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 1.25,
         tiers: [Tier(above: 272000, input: 2.0, output: 7.5, cacheRead: 0.1, cacheWrite: 2.5)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-6.2-astra': Model(
       id: 'gpt-6.2-astra',
@@ -1726,6 +2304,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheRead: 0.4,
         cacheWrite: 10.0,
         tiers: [Tier(above: 272000, input: 16.0, output: 60.0, cacheRead: 0.8, cacheWrite: 20.0)],
+      ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
       ),
     ),
     'gpt-6.2-sol': Model(
@@ -1763,6 +2348,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 2.5,
         tiers: [Tier(above: 272000, input: 4.0, output: 15.0, cacheRead: 0.2, cacheWrite: 5.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-daybreak-blue-latest': Model(
       id: 'gpt-daybreak-blue-latest',
@@ -1791,6 +2383,13 @@ const builtinCatalog = <String, Map<String, Model>>{
         cacheWrite: 5.0,
         tiers: [Tier(above: 272000, input: 8.0, output: 30.0, cacheRead: 0.8, cacheWrite: 10.0)],
       ),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'gpt-daybreak-red-latest': Model(
       id: 'gpt-daybreak-red-latest',
@@ -1813,6 +2412,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 128000,
       compat: {'supportsStrictMode': true, 'supportsExplicitPromptCacheMode': true},
       cost: ModelCost(input: 12.5, output: 75.0, cacheRead: 1.25, cacheWrite: 15.625),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'o1': Model(
       id: 'o1',
@@ -1835,6 +2441,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 100000,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 15.0, output: 60.0, cacheRead: 7.5, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'o1-pro': Model(
       id: 'o1-pro',
@@ -1857,6 +2470,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 100000,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 150.0, output: 600.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'o3': Model(
       id: 'o3',
@@ -1879,6 +2499,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 100000,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 2.0, output: 8.0, cacheRead: 0.5, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'o3-mini': Model(
       id: 'o3-mini',
@@ -1923,6 +2550,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 100000,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 20.0, output: 80.0, cacheRead: 0.0, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
     'o4-mini': Model(
       id: 'o4-mini',
@@ -1945,6 +2579,13 @@ const builtinCatalog = <String, Map<String, Model>>{
       maxTokens: 100000,
       compat: {'supportsStrictMode': true},
       cost: ModelCost(input: 1.1, output: 4.4, cacheRead: 0.275, cacheWrite: 0.0),
+      inputLimits: InputLimits(
+        maxRequestBytes: 536870912,
+        images: ImageLimits(
+          maxPerRequest: 1500,
+          resize: ImageResize(maxWidth: 2000, maxHeight: 2000, maxBytes: 4718592, jpegQuality: 80),
+        ),
+      ),
     ),
   },
 };

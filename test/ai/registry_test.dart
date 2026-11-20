@@ -162,6 +162,36 @@ void main() {
       expect(payload?['model'], 'claude-haiku-5-5');
     });
 
+    test('keeps the conservative resize profile on every vision model', () {
+      final vision = [for (final provider in getBuiltinProviders()) ...getBuiltinModels(provider)]
+          .where((m) => m.input.contains('image'));
+      expect(vision, isNotEmpty);
+      for (final model in vision) {
+        final resize = model.inputLimits?.images?.resize;
+        expect(
+          (resize?.maxWidth, resize?.maxHeight, resize?.maxBytes, resize?.jpegQuality),
+          (2000, 2000, 4718592, 80),
+          reason: model.id,
+        );
+      }
+    });
+
+    test('records known direct-provider image request limits', () {
+      final haiku = getBuiltinModel('anthropic', 'claude-haiku-4-5')!.inputLimits!;
+      expect((haiku.maxRequestBytes, haiku.images?.maxPerRequest), (32 * 1024 * 1024, 100));
+      expect(getBuiltinModel('anthropic', 'claude-opus-5')!.inputLimits?.images?.maxPerRequest, 600);
+      final gpt = getBuiltinModel('openai', 'gpt-4o')!.inputLimits!;
+      expect((gpt.maxRequestBytes, gpt.images?.maxPerRequest), (512 * 1024 * 1024, 1500));
+      final gemini = getBuiltinModel('google', 'gemini-2.5-flash')!.inputLimits!;
+      expect((gemini.maxRequestBytes, gemini.images?.maxPerRequest), (20 * 1024 * 1024, 3600));
+    });
+
+    test('records prompt cache lifetimes for direct Anthropic only', () {
+      final cache = getBuiltinModel('anthropic', 'claude-haiku-5-5')!.promptCache;
+      expect((cache?.short, cache?.long), (300, 3600));
+      expect(getBuiltinModel('google', 'gemini-2.5-flash')!.promptCache, isNull);
+    });
+
     test('compares models by id and provider', () {
       expect(modelsAreEqual(testModel('p', 'a'), testModel('p', 'a')), isTrue);
       expect(modelsAreEqual(testModel('p', 'a'), testModel('q', 'a')), isFalse);

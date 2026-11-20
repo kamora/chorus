@@ -53,6 +53,8 @@ String _model(Map<String, Object?> m) {
       if (value != null) '$key: ${_literal(value)}',
     'cost: ${_cost(cost)}',
     if (m['headers'] != null) 'headers: ${_literal(m['headers'])}',
+    if (m['promptCache'] case final Map<String, Object?> cache) 'promptCache: ${_object('PromptCache', cache)}',
+    if (m['inputLimits'] case final Map<String, Object?> limits) 'inputLimits: ${_limits(limits)}',
   ];
   return 'Model(${args.join(', ')})';
 }
@@ -63,6 +65,32 @@ String _cost(Map<String, Object?> c) {
       'Tier(above: ${t['inputTokensAbove']}, ${_rates(t)})',
   ];
   return 'ModelCost(${_rates(c)}${tiers.isEmpty ? '' : ', tiers: [${tiers.join(', ')}]'})';
+}
+
+String _limits(Map<String, Object?> l) {
+  final images = l['images'] as Map<String, Object?>?;
+  final resize = images?['resize'] as Map<String, Object?>?;
+  final imageArgs = {...?images, if (resize != null) 'resize': _Code(_object('ImageResize', resize))};
+  return _object('InputLimits', {
+    'maxRequestBytes': ?l['maxRequestBytes'],
+    if (images != null) 'images': _Code(_object('ImageLimits', imageArgs)),
+  });
+}
+
+// A constructor call with named arguments.
+String _object(String type, Map<String, Object?> args) => '$type(${args.entries.map(_argument).join(', ')})';
+
+// A named argument: a value as a literal, _Code as it is.
+String _argument(MapEntry<String, Object?> arg) {
+  final value = arg.value;
+  return '${arg.key}: ${value is _Code ? value.code : _literal(value)}';
+}
+
+/// Dart code to write as it is.
+class _Code {
+  const _Code(this.code);
+
+  final String code;
 }
 
 String _rates(Map<String, Object?> r) {

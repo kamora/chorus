@@ -68,6 +68,71 @@ class Tier extends Rates {
   final int above;
 }
 
+/// Best-effort prompt cache lifetimes in seconds, for the short and long retention tiers; null where unknown.
+class PromptCache {
+  const PromptCache({this.short, this.long});
+
+  factory PromptCache.fromJson(Json json) => PromptCache(short: json['short'] as int?, long: json['long'] as int?);
+
+  final int? short;
+  final int? long;
+}
+
+/// A provider's input limits: a serialized request's size, and images.
+class InputLimits {
+  const InputLimits({this.maxRequestBytes, this.images});
+
+  factory InputLimits.fromJson(Json json) {
+    final images = json['images'] as Json?;
+    return InputLimits(
+      maxRequestBytes: json['maxRequestBytes'] as int?,
+      images: images == null ? null : ImageLimits.fromJson(images),
+    );
+  }
+
+  final int? maxRequestBytes;
+  final ImageLimits? images;
+}
+
+/// The images a provider accepts, and the resize profile applied before an image enters a conversation.
+class ImageLimits {
+  const ImageLimits({this.resize, this.maxPerMessage, this.maxPerRequest});
+
+  factory ImageLimits.fromJson(Json json) {
+    final resize = json['resize'] as Json?;
+    return ImageLimits(
+      resize: resize == null ? null : ImageResize.fromJson(resize),
+      maxPerMessage: json['maxPerMessage'] as int?,
+      maxPerRequest: json['maxPerRequest'] as int?,
+    );
+  }
+
+  final ImageResize? resize;
+  final int? maxPerMessage;
+  final int? maxPerRequest;
+}
+
+/// A cache-safe image resize profile: the largest size and, for JPEG, the quality.
+class ImageResize {
+  const ImageResize({this.maxWidth, this.maxHeight, this.maxBytes, this.jpegQuality});
+
+  factory ImageResize.fromJson(Json json) {
+    return ImageResize(
+      maxWidth: json['maxWidth'] as int?,
+      maxHeight: json['maxHeight'] as int?,
+      maxBytes: json['maxBytes'] as int?,
+      jpegQuality: json['jpegQuality'] as int?,
+    );
+  }
+
+  final int? maxWidth;
+  final int? maxHeight;
+
+  /// The largest base64-encoded payload.
+  final int? maxBytes;
+  final int? jpegQuality;
+}
+
 /// A chat model, as pi's catalog describes it.
 class Model {
   const Model({
@@ -84,6 +149,8 @@ class Model {
     required this.contextWindow,
     required this.maxTokens,
     this.compat = const {},
+    this.promptCache,
+    this.inputLimits,
   });
 
   factory Model.fromJson(Json json) {
@@ -101,6 +168,14 @@ class Model {
       contextWindow: json['contextWindow'] as int,
       maxTokens: json['maxTokens'] as int,
       compat: json['compat'] as Json? ?? const {},
+      promptCache: switch (json['promptCache']) {
+        final Json cache => PromptCache.fromJson(cache),
+        _ => null,
+      },
+      inputLimits: switch (json['inputLimits']) {
+        final Json limits => InputLimits.fromJson(limits),
+        _ => null,
+      },
     );
   }
 
@@ -125,6 +200,12 @@ class Model {
 
   /// Settings for APIs whose providers differ, read by the API's own code (pi's `compat`).
   final Json compat;
+
+  /// Prompt cache lifetimes; null when the provider's cache behavior is unknown.
+  final PromptCache? promptCache;
+
+  /// Input limits and the image resize profile. Data only: chorus enforces none of them, as pi's library does not.
+  final InputLimits? inputLimits;
 }
 
 /// Sets [usage]'s cost from [model]'s prices; Anthropic charges twice the input price for 1h cache writes.

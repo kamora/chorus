@@ -31,6 +31,18 @@ Json fields(Model m) {
     'contextWindow': m.contextWindow,
     'maxTokens': m.maxTokens,
     'compat': m.compat,
+    'promptCache': {'short': m.promptCache?.short, 'long': m.promptCache?.long},
+    'inputLimits': {
+      'maxRequestBytes': m.inputLimits?.maxRequestBytes,
+      'maxPerMessage': m.inputLimits?.images?.maxPerMessage,
+      'maxPerRequest': m.inputLimits?.images?.maxPerRequest,
+      'resize': [
+        m.inputLimits?.images?.resize?.maxWidth,
+        m.inputLimits?.images?.resize?.maxHeight,
+        m.inputLimits?.images?.resize?.maxBytes,
+        m.inputLimits?.images?.resize?.jpegQuality,
+      ],
+    },
   };
 }
 
