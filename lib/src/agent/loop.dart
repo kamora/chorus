@@ -3,12 +3,12 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 
 import '../ai/event_stream.dart';
 import '../ai/options.dart';
 import '../ai/transcript.dart';
 import '../ai/types.dart';
+import '../ai/validation.dart';
 import 'types.dart';
 
 /// Receives the events of a run; the loop waits for each.
@@ -508,13 +508,13 @@ Future<_Preparation> _prepare(
   }
 
   try {
-    if (call.argumentsError != null) {
-      throw 'Invalid arguments for tool "${call.name}": ${call.argumentsError}';
-    }
-
-    // A copy, so a tool that changes its arguments never changes the call in the transcript.
-    final raw = jsonDecode(jsonEncode(tool.prepareArguments?.call(call.arguments) ?? call.arguments)) as Json;
-    final arguments = tool.validate == null ? raw : tool.validate!(raw);
+    final prepare = tool.prepareArguments;
+    final arguments = validateToolArguments(
+      tool,
+      prepare == null
+          ? call
+          : ToolCall(call.id, call.name, prepare(call.arguments), argumentsError: call.argumentsError),
+    );
     final before = await hooks.beforeToolCall?.call(ToolCallContext(message, call, arguments, context), signal);
     if (signal?.aborted ?? false) {
       return _Immediate(AgentToolResult.error('Operation aborted'));

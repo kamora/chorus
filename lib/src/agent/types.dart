@@ -54,7 +54,6 @@ class AgentTool extends Tool {
     required this.execute,
     String? label,
     this.prepareArguments,
-    this.validate,
     this.executionMode,
   }) : label = label ?? name,
        super(name, description, parameters);
@@ -64,10 +63,6 @@ class AgentTool extends Tool {
 
   /// Fixes up the model's raw arguments before validation, for tools whose arguments changed shape.
   final Json Function(Json arguments)? prepareArguments;
-
-  /// Checks the arguments and returns the ones to run with; throws a message for the model when they are invalid.
-  /// Without it the arguments are not checked (pi validates them against [parameters], which chorus doesn't yet).
-  final Object? Function(Json arguments)? validate;
 
   /// Overrides the loop's [ToolExecution] for this tool; one sequential tool makes its whole batch sequential.
   final ToolExecution? executionMode;

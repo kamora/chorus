@@ -4,8 +4,7 @@ import 'package:chorus/chorus.dart';
 import 'package:test/test.dart';
 
 // Ported from pi's packages/agent/test/agent-loop.test.ts. Left out: the default stream function (chorus has none)
-// and structured tool content (not ported). pi validates tool arguments with pi-schema; here a tool's `validate`
-// hook stands in where a test needs validation.
+// and structured tool content (not ported).
 
 const model = Model(
   id: 'mock',
@@ -80,15 +79,14 @@ AgentTool tool(
   Future<AgentToolResult> Function(Object? arguments) run, {
   ToolExecution? mode,
   Json Function(Json)? prepare,
-  Object? Function(Json)? validate,
+  Json parameters = _schema,
 }) {
   return AgentTool(
     name: name,
     description: '$name tool',
-    parameters: _schema,
+    parameters: parameters,
     executionMode: mode,
     prepareArguments: prepare,
-    validate: validate,
     execute: (id, arguments, signal, onUpdate) => run(arguments),
   );
 }
@@ -393,6 +391,27 @@ void main() {
                     {'oldText': args['oldText'], 'newText': args['newText']},
                   ],
                 };
+              },
+
+              // pi's obj({edits: arr(obj({oldText: str(), newText: str()}))}): the raw arguments fail it.
+              parameters: const {
+                'type': 'object',
+                'properties': {
+                  'edits': {
+                    'type': 'array',
+                    'items': {
+                      'type': 'object',
+                      'properties': {
+                        'oldText': {'type': 'string'},
+                        'newText': {'type': 'string'},
+                      },
+                      'required': ['oldText', 'newText'],
+                      'additionalProperties': false,
+                    },
+                  },
+                },
+                'required': ['edits'],
+                'additionalProperties': false,
               },
             ),
           ],
@@ -1334,15 +1353,6 @@ void main() {
       name: 'echo',
       description: 'Echo',
       parameters: _schema,
-
-      // Stands in for pi-schema's validation of `{value: string}`.
-      validate: (args) {
-        if (args['value'] is! String) {
-          throw 'value: must be string';
-        }
-
-        return args;
-      },
       execute: (id, args, signal, onUpdate) async {
         onUpdate(text('partial'));
         return text(value(args));

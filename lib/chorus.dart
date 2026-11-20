@@ -11,3 +11,4 @@ export 'src/ai/providers/anthropic.dart'
     show AnthropicOptions, ProviderException, streamAnthropic, streamSimpleAnthropic;
 export 'src/ai/retry.dart' show AbortedException;
 export 'src/ai/types.dart';
+export 'src/ai/validation.dart';

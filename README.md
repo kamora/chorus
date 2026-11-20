@@ -12,15 +12,16 @@ Work in progress. So far:
   messages and tool changes, server-side fallback models and the model catalog.
 - pi-agent-core's agent loop (`agentLoop`, `agentLoopContinue`, `runToolCall`): turns, tool calls in sequence or in
   parallel, before and after hooks, steering and follow-up messages, tool changes announced to the model. Tool
-  arguments are checked only by a tool's own `validate`; pi's JSON Schema validation (pi-schema) comes later as its
-  own package.
+  arguments are coerced and validated against the tool's JSON Schema (`validateToolArguments`) with
+  [pluto](https://pub.dev/packages/pluto), the Dart port of pi-schema.
 - pi-agent-core's `Agent`: the transcript and tools, runs with subscribers, abort, and steering and follow-up queues.
   pi's `continue()` is `proceed()`, since `continue` is a reserved word in Dart.
 
 ## Tests
 
 `dart test`. Most tests are ported from pi's own; `test/fixtures/pi-messages.json` holds messages taken from pi's
-session fixtures, with long texts trimmed. Nothing calls a real API.
+session fixtures, with long texts trimmed, and `test/fixtures/pi-validation-probes.json` pi's tool argument probes,
+recorded with their outcomes. Nothing calls a real API.
 
 `tool/live.dart` runs live checks against the Anthropic API (a plain answer, a tool round trip through the Agent,
 adaptive thinking, and thinking sent back in a second turn); it costs a few cents' worth of tokens:
