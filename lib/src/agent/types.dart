@@ -24,7 +24,14 @@ enum ToolExecution { sequential, parallel }
 
 /// A tool's result, final or partial.
 class AgentToolResult {
-  AgentToolResult(this.content, {this.details, this.usage, this.isError = false, this.terminate = false});
+  AgentToolResult(
+    this.content, {
+    this.details,
+    this.structuredContent,
+    this.usage,
+    this.isError = false,
+    this.terminate = false,
+  });
 
   /// An error result with [message] as its text.
   factory AgentToolResult.error(String message) => AgentToolResult([TextContent(message)], details: const {});
@@ -34,6 +41,10 @@ class AgentToolResult {
 
   /// Any JSON value for logs and the app; not sent to the model.
   final Object? details;
+
+  /// A machine-readable result matching the tool's [AgentTool.outputSchema], for programmatic callers; not sent to
+  /// the model, which reads [content].
+  final Object? structuredContent;
 
   /// Usage of the tool's own execution, outside the main context accounting.
   final Usage? usage;
@@ -54,6 +65,7 @@ class AgentTool extends Tool {
     required this.execute,
     String? label,
     this.prepareArguments,
+    this.outputSchema,
     this.executionMode,
     super.constrainedSampling,
   }) : label = label ?? name,
@@ -64,6 +76,10 @@ class AgentTool extends Tool {
 
   /// Fixes up the model's raw arguments before validation, for tools whose arguments changed shape.
   final Json Function(Json arguments)? prepareArguments;
+
+  /// The JSON Schema of [AgentToolResult.structuredContent] in successful results; a tool that declares it always sets
+  /// it.
+  final Json? outputSchema;
 
   /// Overrides the loop's [ToolExecution] for this tool; one sequential tool makes its whole batch sequential.
   final ToolExecution? executionMode;
@@ -102,10 +118,15 @@ class BeforeToolCall {
 
 /// Returned by [AgentLoopConfig.afterToolCall]: each field set replaces the result's.
 class AfterToolCall {
-  const AfterToolCall({this.content, this.details, this.usage, this.isError, this.terminate});
+  const AfterToolCall({this.content, this.details, this.structuredContent, this.usage, this.isError, this.terminate});
 
+  /// Replaces the content; without [structuredContent] alongside, the structured content is dropped, since it may no
+  /// longer match.
   final List<Content>? content;
   final Object? details;
+
+  /// Replaces the structured content.
+  final Object? structuredContent;
   final Usage? usage;
   final bool? isError;
   final bool? terminate;

@@ -588,6 +588,9 @@ Future<_Outcome> _finalize(
         result = AgentToolResult(
           change.content ?? result.content,
           details: change.details ?? result.details,
+
+          // Structured content not replaced along with the content may no longer match it.
+          structuredContent: change.structuredContent ?? (change.content == null ? result.structuredContent : null),
           usage: change.usage ?? result.usage,
           isError: result.isError,
           terminate: change.terminate ?? result.terminate,

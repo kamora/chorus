@@ -1353,9 +1353,10 @@ void main() {
       name: 'echo',
       description: 'Echo',
       parameters: _schema,
+      outputSchema: _schema,
       execute: (id, args, signal, onUpdate) async {
         onUpdate(text('partial'));
-        return text(value(args));
+        return AgentToolResult([TextContent(value(args))], structuredContent: {'value': value(args)});
       },
     );
     final failing = AgentTool(
@@ -1397,6 +1398,7 @@ void main() {
 
       final a = await run('a', 'echo', {'value': 'a'});
       expect((a.call.id, a.isError, (a.result.content.single as TextContent).text), ('a', false, 'a'));
+      expect(a.result.structuredContent, {'value': 'a'});
       expect(
         (await run('b', 'echo', {
           'value': {'nested': true},
@@ -1416,6 +1418,35 @@ void main() {
 
       // Validation failures and unknown tools never reach the hooks; blocked calls skip afterToolCall.
       expect(hooks, ['before a', 'after a', 'before c', 'before e', 'after e']);
+    });
+
+    test('lets afterToolCall replace structured content and drops it when only content is replaced', () async {
+      final redacted = [TextContent('redacted')];
+      final seen = <Object?>[];
+      for (final change in [
+        AfterToolCall(content: redacted),
+        const AfterToolCall(structuredContent: {'value': 'replaced'}),
+        AfterToolCall(content: redacted, structuredContent: const {'value': 'both'}),
+        const AfterToolCall(details: {'note': 'kept'}),
+      ]) {
+        seen.add(
+          (await runToolCall(
+            ToolCall('x', 'echo', {'value': 'original'}),
+            tools: [echo],
+            message: assistant([]),
+            context: AgentContext([]),
+            hooks: ToolHooks(afterToolCall: (call, result, isError, _) async => change),
+            onUpdate: (_) {},
+          )).result.structuredContent,
+        );
+      }
+
+      expect(seen, [
+        null,
+        {'value': 'replaced'},
+        {'value': 'both'},
+        {'value': 'original'},
+      ]);
     });
   });
 }
