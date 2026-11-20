@@ -183,6 +183,27 @@ void main() {
       expect(plain.requests.single.headers['anthropic-beta'] ?? '', isNot(contains('server-side-fallback')));
     });
 
+    test('uses the serving model input transformations from the final stream event', () async {
+      final events = minimalEvents();
+      (events[0]['message'] as Json)['input_transformations'] = [
+        {'type': 'thinking_dropped', 'path': 'messages.1.content.0', 'reason': 'prefix_binding_mismatch'},
+      ];
+      events[4]['input_transformations'] = [
+        {'type': 'thinking_dropped', 'path': 'messages.3.content.0', 'reason': 'model_binding_mismatch'},
+      ];
+      final result = await run(claude(id: 'claude-fable-5-1'), [user('Hello')], FakeServer(sse(events)));
+      expect(result.diagnostics, hasLength(1));
+      expect(result.diagnostics!.single.type, 'anthropic_input_transformations');
+      expect(result.diagnostics!.single.details, {
+        'transformations': [
+          {'type': 'thinking_dropped', 'path': 'messages.3.content.0', 'reason': 'model_binding_mismatch'},
+        ],
+      });
+
+      final plain = await run(claude(), [user('Hello')], FakeServer(sse(minimalEvents())));
+      expect(plain.diagnostics, isNull);
+    });
+
     test('fails safely when Anthropic falls back after output begins', () async {
       final result = await run(
         claude(),

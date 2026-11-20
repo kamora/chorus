@@ -1175,7 +1175,7 @@ Future<void> _run(
 
     await options.onResponse?.call(ProviderResponse(response.statusCode, response.headers), model);
     stream.push(StartEvent(output));
-    await _read(model, response.stream, options, output, stream);
+    final transformations = await _read(model, response.stream, options, output, stream);
     if (signal?.aborted ?? false) {
       throw const AbortedException();
     }
@@ -1190,6 +1190,22 @@ Future<void> _run(
 
     if (thread != null) {
       _recordThread(model, thread, params, output);
+    }
+
+    if (transformations != null && transformations.isNotEmpty) {
+      output.diagnostics = [
+        ...?output.diagnostics,
+        Diagnostic(
+          type: 'anthropic_input_transformations',
+          timestamp: DateTime.now().millisecondsSinceEpoch,
+          details: {
+            'transformations': [
+              for (final t in transformations.cast<Json>())
+                {'type': ?t['type'], 'path': ?t['path'], 'reason': ?t['reason']},
+            ],
+          },
+        ),
+      ];
     }
 
     stream.push(DoneEvent(output.stopReason, output));
@@ -1209,7 +1225,9 @@ Future<void> _run(
 /// The open content blocks, by Anthropic's block index: where each sits in the output, and a tool call's arguments.
 typedef _Open = ({int index, ToolArgumentsStream? arguments});
 
-Future<void> _read(
+/// Reads the response into [output] and [stream]; returns the input transformations Anthropic reported last (how it
+/// changed the request's input, such as dropping a thinking block), if any.
+Future<List<Object?>?> _read(
   Model model,
   Stream<List<int>> body,
   AnthropicOptions options,
@@ -1217,6 +1235,7 @@ Future<void> _read(
   AssistantMessageEventStream stream,
 ) async {
   final open = <int, _Open>{};
+  List<Object?>? transformations;
 
   // The prices billed: an allowed fallback model's when it answered instead.
   ModelCost? fallbackCost;
@@ -1233,6 +1252,10 @@ Future<void> _read(
       case 'message_start':
         final message = event['message'] as Json;
         output.responseId = message['id'] as String?;
+        if (message['input_transformations'] case final List<Object?> list) {
+          transformations = list;
+        }
+
         final answered = message['model'] as String?;
         if (answered != null && answered != model.id) {
           output.responseModel = answered;
@@ -1334,6 +1357,10 @@ Future<void> _read(
             continue;
         }
       case 'message_delta':
+        if (event['input_transformations'] case final List<Object?> list) {
+          transformations = list;
+        }
+
         final delta = event['delta'] as Json? ?? const {};
         final reason = delta['stop_reason'] as String?;
         if (reason != null) {
@@ -1360,6 +1387,8 @@ Future<void> _read(
         total();
     }
   }
+
+  return transformations;
 }
 
 /// The adaptive-thinking effort for [level]: the model's own mapping, else pi's default.

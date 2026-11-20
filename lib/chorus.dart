@@ -15,4 +15,5 @@ export 'src/ai/registry.dart';
 export 'src/ai/retry.dart' show AbortedException;
 export 'src/ai/session.dart' show cleanupSessionResources, registerSessionCleanup;
 export 'src/ai/types.dart';
+export 'src/ai/uuid.dart' show uuidv7;
 export 'src/ai/validation.dart';
