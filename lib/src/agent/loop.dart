@@ -478,8 +478,12 @@ class _Prepared extends _Preparation {
   final Object? arguments;
 }
 
-/// The text of a thrown error, as the model sees it.
-String _errorText(Object error) {
+/// The text of a thrown error, as the model and the app see it.
+String errorText(Object error) {
+  if (error is StateError) {
+    return error.message;
+  }
+
   final text = '$error';
   return text.startsWith('Exception: ') ? text.substring('Exception: '.length) : text;
 }
@@ -524,7 +528,7 @@ Future<_Preparation> _prepare(
 
     return _Prepared(call, tool, arguments);
   } catch (error) {
-    return _Immediate(AgentToolResult.error(_errorText(error)));
+    return _Immediate(AgentToolResult.error(errorText(error)));
   }
 }
 
@@ -552,7 +556,7 @@ Future<_Executed> _executePrepared(
     final durationMs = clock.elapsedMilliseconds;
     accepting = false;
     await Future.wait(updates);
-    return (result: AgentToolResult.error(_errorText(error)), isError: true, durationMs: durationMs);
+    return (result: AgentToolResult.error(errorText(error)), isError: true, durationMs: durationMs);
   } finally {
     accepting = false;
   }
@@ -590,7 +594,7 @@ Future<_Outcome> _finalize(
         isError = change.isError ?? isError;
       }
     } catch (error) {
-      result = AgentToolResult.error(_errorText(error));
+      result = AgentToolResult.error(errorText(error));
       isError = true;
     }
   }

@@ -13,7 +13,9 @@ Work in progress. So far:
 - pi-agent-core's agent loop (`agentLoop`, `agentLoopContinue`, `runToolCall`): turns, tool calls in sequence or in
   parallel, before and after hooks, steering and follow-up messages, tool changes announced to the model. Tool
   arguments are checked only by a tool's own `validate`; pi's JSON Schema validation (pi-schema) comes later as its
-  own package. Not yet: the stateful `Agent` class.
+  own package.
+- pi-agent-core's `Agent`: the transcript and tools, runs with subscribers, abort, and steering and follow-up queues.
+  pi's `continue()` is `proceed()`, since `continue` is a reserved word in Dart.
 
 ## Tests
 
