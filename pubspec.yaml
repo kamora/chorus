@@ -1,8 +1,10 @@
 name: chorus
 description: >-
-  A Dart port of pi's agent toolkit (earendil-works/pi): one API over LLM providers and an agent loop.
-version: 0.0.1
-publish_to: none
+  Build AI agents in Dart with one API for Anthropic, OpenAI and Google models: streaming, tools, thinking and an
+  agent loop. A port of pi's agent toolkit.
+version: 0.1.0
+repository: https://github.com/kamora/chorus
+topics: [ai, llm, agents, anthropic, openai]
 
 environment:
   sdk: ^3.13.5

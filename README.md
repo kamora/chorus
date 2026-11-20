@@ -12,12 +12,8 @@ browser, and Flutter is untested.
 
 ## Install
 
-chorus is not on pub.dev yet. Until it is, depend on the repository:
-
-```yaml
-dependencies:
-  chorus:
-    git: https://github.com/kamora/chorus.git
+```sh
+dart pub add chorus
 ```
 
 ## Use

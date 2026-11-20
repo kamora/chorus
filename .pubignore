@@ -1,1 +1,5 @@
+# pub reads this file instead of .gitignore, so everything private is listed again here.
 aura.json
+.secret/
+.dart_tool/
+pubspec.lock
