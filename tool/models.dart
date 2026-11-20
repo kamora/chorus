@@ -15,8 +15,8 @@ void main() {
     ..writeln()
     ..writeln("import 'model.dart';")
     ..writeln()
-    ..writeln("/// pi's built-in chat models, by provider and id.")
-    ..writeln('const builtinModels = <String, Map<String, Model>>{');
+    ..writeln("/// pi's built-in chat models, by provider and id; read through `getBuiltinModel` and the others.")
+    ..writeln('const builtinCatalog = <String, Map<String, Model>>{');
   for (final provider in providers) {
     final models = jsonDecode(File('catalog/$provider.json').readAsStringSync()) as Map<String, Object?>;
     out.writeln('  ${_literal(provider)}: {');

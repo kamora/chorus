@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:chorus/chorus.dart';
+import 'package:chorus/src/ai/models.generated.dart';
 import 'package:test/test.dart';
 
 /// A model's fields as JSON, to compare two models.
@@ -37,7 +38,7 @@ void main() {
   for (final provider in ['anthropic', 'openai', 'google']) {
     test('$provider: the generated models are the catalog\'s', () {
       final catalog = jsonDecode(File('catalog/$provider.json').readAsStringSync()) as Json;
-      final generated = builtinModels[provider]!;
+      final generated = builtinCatalog[provider]!;
       expect(generated.keys, catalog.keys);
       for (final MapEntry(:key, :value) in catalog.entries) {
         expect(jsonEncode(fields(generated[key]!)), jsonEncode(fields(Model.fromJson(value as Json))), reason: key);
@@ -47,7 +48,7 @@ void main() {
 
   test('every model belongs to its provider and is served on its API', () {
     const apis = {'anthropic': 'anthropic-messages', 'openai': 'openai-responses', 'google': 'google-generative-ai'};
-    for (final MapEntry(:key, :value) in builtinModels.entries) {
+    for (final MapEntry(:key, :value) in builtinCatalog.entries) {
       for (final model in value.values) {
         expect((model.provider, model.api), (key, apis[key]), reason: model.id);
       }

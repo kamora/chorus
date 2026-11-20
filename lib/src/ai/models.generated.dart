@@ -3,8 +3,8 @@
 
 import 'model.dart';
 
-/// pi's built-in chat models, by provider and id.
-const builtinModels = <String, Map<String, Model>>{
+/// pi's built-in chat models, by provider and id; read through `getBuiltinModel` and the others.
+const builtinCatalog = <String, Map<String, Model>>{
   'anthropic': {
     'claude-fable-5': Model(
       id: 'claude-fable-5',

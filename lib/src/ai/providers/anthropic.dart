@@ -48,6 +48,27 @@ class AnthropicOptions extends StreamOptions {
     this.client,
   });
 
+  /// The provider-neutral [options] as Anthropic options, with none of Anthropic's own set.
+  factory AnthropicOptions.from(StreamOptions options) {
+    return AnthropicOptions(
+      signal: options.signal,
+      apiKey: options.apiKey,
+      headers: options.headers,
+      httpClient: options.httpClient,
+      timeout: options.timeout,
+      maxRetries: options.maxRetries,
+      maxRetryDelay: options.maxRetryDelay,
+      temperature: options.temperature,
+      maxTokens: options.maxTokens,
+      cacheRetention: options.cacheRetention,
+      sessionId: options.sessionId,
+      metadata: options.metadata,
+      onPayload: options.onPayload,
+      onResponse: options.onResponse,
+      onEvent: options.onEvent,
+    );
+  }
+
   /// Extended thinking: adaptive for models with `forceAdaptiveThinking`, budget-based for older ones. Omitted from
   /// the request when `null`.
   final bool? thinkingEnabled;

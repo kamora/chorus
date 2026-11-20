@@ -1,5 +1,5 @@
-/// Live checks against the Anthropic API: a plain answer, a tool round trip through the Agent, adaptive thinking, and
-/// signed thinking sent back in a second turn.
+/// Live checks against the Anthropic API, through the built-in providers: a plain answer, a tool round trip through the
+/// Agent, adaptive thinking, and signed thinking sent back in a second turn.
 ///
 /// Run with a key in the environment; it is never printed:
 ///
@@ -32,17 +32,17 @@ Future<void> main(List<String> args) async {
     exit(2);
   }
 
-  final models = builtinModels['anthropic']!;
-  final model = models[args.firstOrNull ?? 'claude-haiku-5-5'];
+  final model = getBuiltinModel('anthropic', args.firstOrNull ?? 'claude-haiku-5-5');
   if (model == null) {
-    stderr.writeln('Unknown model. Anthropic models: ${models.keys.join(', ')}');
+    stderr.writeln('Unknown model. Anthropic models: ${getBuiltinModels('anthropic').map((m) => m.id).join(', ')}');
     exit(2);
   }
 
   final options = SimpleStreamOptions(apiKey: key, maxTokens: 4000);
-  final plain = await streamSimpleAnthropic(model, [
+  final models = builtinModels();
+  final plain = await models.completeSimple(model, [
     UserMessage([TextContent('Reply with exactly: pong')], timestamp: 1),
-  ], options).result;
+  ], options);
   _check('plain answer', _text(plain).toLowerCase().contains('pong'), plain);
 
   final add = Agent(
@@ -67,7 +67,7 @@ Future<void> main(List<String> args) async {
       ),
     ],
     options: options,
-    stream: streamSimpleAnthropic,
+    stream: models.streamSimple,
   );
   await add.promptText('What is 1234 + 4321?');
   final answer = add.messages.last as AssistantMessage;
@@ -77,7 +77,7 @@ Future<void> main(List<String> args) async {
     answer,
   );
 
-  final thinking = Agent(model: model, level: ThinkingLevel.low, options: options, stream: streamSimpleAnthropic);
+  final thinking = Agent(model: model, level: ThinkingLevel.low, options: options, stream: models.streamSimple);
   await thinking.promptText('Is 391 prime? Answer yes or no.');
   final first = thinking.messages.last as AssistantMessage;
   _check(
