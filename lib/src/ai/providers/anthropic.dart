@@ -107,6 +107,11 @@ class ProviderException implements Exception {
 
 const _fineGrainedToolStreaming = 'fine-grained-tool-streaming-2025-05-14';
 const _interleavedThinking = 'interleaved-thinking-2025-05-14';
+const _midConversationOutputConfig = 'mid-conversation-output-config-2026-07-01';
+const _thinkingBindingControls = 'thinking-binding-controls-2026-08-01';
+
+/// Anthropic's effort levels.
+const _efforts = {'low', 'medium', 'high', 'xhigh', 'max'};
 
 /// The `compat` settings this provider reads, with their defaults.
 class _Compat {
@@ -192,8 +197,15 @@ Json _toolResult(ToolResultMessage message, List<Content> content) {
 }
 
 /// The conversation (without the leading system message) as Anthropic messages, with [cache] on the last block of
-/// the last user message.
-List<Json> convertMessages(List<Message> messages, Json? cache, {bool emptySignature = false}) {
+/// the last user message. With [efforts], the effort of each reply of [effortProvider] that recorded one goes into it,
+/// by the reply's index in the result.
+List<Json> convertMessages(
+  List<Message> messages,
+  Json? cache, {
+  bool emptySignature = false,
+  String? effortProvider,
+  Map<int, String>? efforts,
+}) {
   final params = <Json>[];
   for (var i = 0; i < messages.length; i++) {
     final message = messages[i];
@@ -260,6 +272,11 @@ List<Json> convertMessages(List<Message> messages, Json? cache, {bool emptySigna
           continue;
         }
 
+        final level = message.providerThinkingLevel;
+        if (efforts != null && _replayable(message, effortProvider) && _efforts.contains(level)) {
+          efforts[params.length] = level!;
+        }
+
         params.add({'role': 'assistant', 'content': blocks});
       case ToolResultMessage():
 
@@ -295,6 +312,44 @@ List<Json> convertMessages(List<Message> messages, Json? cache, {bool emptySigna
   }
 
   return params;
+}
+
+// Whether [message] is a reply of [provider] on this API, whose recorded effort can be replayed.
+bool _replayable(AssistantMessage message, String? provider) {
+  return provider != null && message.api == 'anthropic-messages' && message.provider == provider;
+}
+
+/// [messages] with an effort marker (an empty system message with `output_config`) before each reply in [efforts], and
+/// one with [active] at the end.
+List<Json> _withEffortMarkers(List<Json> messages, Map<int, String> efforts, String active) {
+  Json marker(String effort) {
+    return {
+      'role': 'system',
+      'content': <Object?>[],
+      'output_config': {'effort': effort},
+    };
+  }
+
+  return [
+    for (final (i, message) in messages.indexed) ...[if (efforts[i] case final String effort) marker(effort), message],
+    marker(active),
+  ];
+}
+
+/// Whether thinking is disabled for this request: thinking turned off on a model that allows it (`off` not null).
+bool _thinkingDisabled(Model model, AnthropicOptions options) {
+  if (!model.reasoning || options.thinkingEnabled != false) {
+    return false;
+  }
+
+  final levels = model.levels ?? const {};
+  return !(levels.containsKey('off') && levels['off'] == null);
+}
+
+/// Whether the request sets its effort per reply with markers: on models with mid-conversation effort, unless
+/// thinking is disabled (the level cannot change between messages then).
+bool _effortMarkers(Model model, AnthropicOptions options) {
+  return _Compat(model).midEffort && !_thinkingDisabled(model, options);
 }
 
 /// Tools as Anthropic declares them, with [cache] on the last one.
@@ -417,6 +472,7 @@ List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options) {
     if (tools.isNotEmpty && !compat.eagerToolInput) _fineGrainedToolStreaming,
     if (model.reasoning && options.thinkingEnabled == true && (options.interleavedThinking ?? true) && !compat.adaptive)
       _interleavedThinking,
+    if (compat.midEffort) ...[_midConversationOutputConfig, _thinkingBindingControls],
   }.toList();
 }
 
@@ -430,13 +486,18 @@ Json buildParams(Model model, List<Message> messages, AnthropicOptions options, 
   final betas = _betas(model, tools, options);
   final text = system == null ? '' : systemText(system);
 
+  final markers = _effortMarkers(model, options);
+  final efforts = <int, String>{};
+  final converted = convertMessages(
+    system == null ? transformed : transformed.sublist(1),
+    cache,
+    emptySignature: compat.emptySignature,
+    effortProvider: markers ? model.provider : null,
+    efforts: efforts,
+  );
   final params = <String, Object?>{
     'model': model.id,
-    'messages': convertMessages(
-      system == null ? transformed : transformed.sublist(1),
-      cache,
-      emptySignature: compat.emptySignature,
-    ),
+    'messages': markers ? _withEffortMarkers(converted, efforts, options.effort ?? 'high') : converted,
     'max_tokens': options.maxTokens ?? model.maxTokens,
     'stream': true,
     if (betas.isNotEmpty) 'betas': betas,
@@ -463,9 +524,19 @@ Json buildParams(Model model, List<Message> messages, AnthropicOptions options, 
   }
 
   // A `thinkingLevelMap` with `off: null` marks thinking as impossible to turn off.
-  final levels = model.levels ?? const {};
-  if (model.reasoning && options.thinkingEnabled == false && !(levels.containsKey('off') && levels['off'] == null)) {
+  if (_thinkingDisabled(model, options)) {
+    // No effort is sent, so the model default applies. Anthropic rejects `block_binding` with disabled thinking.
     params['thinking'] = {'type': 'disabled'};
+  } else if (markers) {
+    // Adaptive thinking, so a prefix mismatch drops the block instead of failing every later request. The markers set
+    // each reply's effort; the top-level one is part of the cached prompt, so it stays fixed, and "low" because
+    // organizations can cap effort and reject requests with any level above the cap.
+    params['thinking'] = {
+      'type': 'adaptive',
+      'display': options.thinkingDisplay ?? 'summarized',
+      'block_binding': {'prefix_mismatch_behavior': 'drop_block'},
+    };
+    params['output_config'] = {'effort': 'low'};
   } else if (model.reasoning && options.thinkingEnabled == true) {
     // "summarized" keeps Opus 4.7 and later, whose API default is "omitted", like older Claude 4 models.
     final display = options.thinkingDisplay ?? 'summarized';
@@ -691,6 +762,11 @@ Future<void> _run(
 
     if (signal?.aborted ?? false) {
       throw const AbortedException();
+    }
+
+    // The effort this reply is asked for, recorded so later requests can replay it as its marker.
+    if (_effortMarkers(model, options)) {
+      output.providerThinkingLevel = options.effort ?? 'high';
     }
 
     var disablePreferred = _overStrictLimits.contains(options.sessionId);
