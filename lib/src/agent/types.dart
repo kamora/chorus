@@ -55,6 +55,7 @@ class AgentTool extends Tool {
     String? label,
     this.prepareArguments,
     this.executionMode,
+    super.constrainedSampling,
   }) : label = label ?? name,
        super(name, description, parameters);
 

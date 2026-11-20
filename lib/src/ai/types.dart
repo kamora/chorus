@@ -221,17 +221,99 @@ class Usage {
 
 /// A tool the model may call; [parameters] is the JSON Schema of its arguments.
 class Tool {
-  const Tool(this.name, this.description, this.parameters);
+  const Tool(this.name, this.description, this.parameters, {this.constrainedSampling});
 
   factory Tool.fromJson(Json json) {
-    return Tool(json['name'] as String, json['description'] as String, json['parameters'] as Json);
+    return Tool(
+      json['name'] as String,
+      json['description'] as String,
+      json['parameters'] as Json,
+      constrainedSampling: switch (json['constrainedSampling']) {
+        final Json config => ConstrainedSampling.fromJson(config),
+        _ => null,
+      },
+    );
   }
 
   final String name;
   final String description;
   final Json parameters;
 
-  Json toJson() => {'name': name, 'description': description, 'parameters': parameters};
+  /// How the provider should constrain the model's arguments; none when null.
+  final ConstrainedSampling? constrainedSampling;
+
+  Json toJson() {
+    return {
+      'name': name,
+      'description': description,
+      'parameters': parameters,
+      'constrainedSampling': ?constrainedSampling?.toJson(),
+    };
+  }
+}
+
+/// How a provider constrains a tool's arguments while the model writes them.
+sealed class ConstrainedSampling {
+  const ConstrainedSampling();
+
+  factory ConstrainedSampling.fromJson(Json json) {
+    return switch (json['type']) {
+      'json_schema' => JsonSchemaSampling(Strictness.values.byName(json['strict'] as String)),
+      'grammar' => GrammarSampling((json['variants'] as Json).cast<String, String>()),
+      final type => throw FormatException('Unknown constrained sampling: $type'),
+    };
+  }
+
+  Json toJson();
+}
+
+/// Whether a tool must be sampled strictly ([require]: a request that cannot fails) or only where possible.
+enum Strictness { prefer, require }
+
+/// Arguments sampled to match the tool's JSON Schema exactly (Anthropic's and OpenAI's strict tools).
+class JsonSchemaSampling extends ConstrainedSampling {
+  const JsonSchemaSampling(this.strict);
+
+  final Strictness strict;
+
+  @override
+  Json toJson() => {'type': 'json_schema', 'strict': strict.name};
+}
+
+/// Arguments sampled from a grammar, by provider grammar variant (`openai_lark`, `openai_regex`). Only OpenAI has
+/// grammar tools; other providers send such a tool as an ordinary one.
+class GrammarSampling extends ConstrainedSampling {
+  const GrammarSampling(this.variants);
+
+  final Map<String, String> variants;
+
+  @override
+  Json toJson() => {'type': 'grammar', 'variants': variants};
+}
+
+/// A recovery or failure the provider records on a response, such as a request resent without strict tools.
+class Diagnostic {
+  const Diagnostic({required this.type, required this.timestamp, this.error, this.details});
+
+  factory Diagnostic.fromJson(Json json) {
+    return Diagnostic(
+      type: json['type'] as String,
+      timestamp: json['timestamp'] as int,
+      error: json['error'] as Json?,
+      details: json['details'] as Json?,
+    );
+  }
+
+  final String type;
+
+  /// Unix time in milliseconds.
+  final int timestamp;
+
+  /// The error behind it: `message`, and `name`, `stack` or `code` when known.
+  final Json? error;
+  final Json? details;
+
+  Json toJson() => {'type': type, 'timestamp': timestamp, 'error': ?error, 'details': ?details};
 }
 
 sealed class Message {
@@ -336,6 +418,7 @@ class AssistantMessage extends Message {
     this.endTurn,
     required int timestamp,
     this.durationMs,
+    this.diagnostics,
   }) : content = content ?? [],
        usage = usage ?? Usage(),
        super(timestamp);
@@ -358,6 +441,10 @@ class AssistantMessage extends Message {
       endTurn: json['endTurn'] as bool?,
       timestamp: json['timestamp'] as int,
       durationMs: json['durationMs'] as int?,
+      diagnostics: switch (json['diagnostics']) {
+        final List<Object?> list => [for (final d in list) Diagnostic.fromJson(d as Json)],
+        _ => null,
+      },
     );
   }
 
@@ -387,6 +474,9 @@ class AssistantMessage extends Message {
   /// Milliseconds from [timestamp] until the response ended, set by [AssistantMessageEventStream].
   int? durationMs;
 
+  /// Recoveries and failures the provider recorded, oldest first.
+  List<Diagnostic>? diagnostics;
+
   @override
   Json toJson() {
     return {
@@ -406,6 +496,7 @@ class AssistantMessage extends Message {
       'endTurn': ?endTurn,
       'timestamp': timestamp,
       'durationMs': ?durationMs,
+      'diagnostics': ?diagnostics?.map((d) => d.toJson()).toList(),
     };
   }
 }

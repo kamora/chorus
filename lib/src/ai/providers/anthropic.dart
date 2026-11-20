@@ -12,11 +12,13 @@ import 'dart:math';
 import 'package:anthropic_sdk_lite_dart/anthropic_sdk_lite_dart.dart';
 import 'package:http/http.dart' as http;
 
+import '../constrained.dart';
 import '../event_stream.dart';
 import '../json.dart';
 import '../model.dart';
 import '../options.dart';
 import '../retry.dart';
+import '../session.dart';
 import '../transcript.dart';
 import '../transform.dart';
 import '../types.dart';
@@ -117,7 +119,8 @@ class _Compat {
       temperature = model.compat['supportsTemperature'] as bool? ?? true,
       emptySignature = model.compat['allowEmptySignature'] as bool? ?? false,
       adaptive = model.compat['forceAdaptiveThinking'] as bool? ?? false,
-      midEffort = model.compat['supportsMidConvoEffort'] as bool? ?? false;
+      midEffort = model.compat['supportsMidConvoEffort'] as bool? ?? false,
+      strictTools = model.compat['supportsStrictTools'] as bool? ?? false;
 
   final bool eagerToolInput;
   final bool longCache;
@@ -130,6 +133,7 @@ class _Compat {
 
   /// Models with mid-conversation effort reject `temperature`.
   final bool midEffort;
+  final bool strictTools;
 
   static bool _openRouter(Model model) => model.provider == 'openrouter' || model.baseUrl.contains('openrouter.ai');
 }
@@ -294,28 +298,101 @@ List<Json> convertMessages(List<Message> messages, Json? cache, {bool emptySigna
 }
 
 /// Tools as Anthropic declares them, with [cache] on the last one.
-List<Json> convertTools(List<Tool> tools, {bool eager = true, Json? cache}) {
+// Keywords Anthropic's strict tool use rejects with a 400 for the whole request.
+// https://platform.claude.com/docs/en/build-with-claude/structured-outputs#json-schema-limitations
+const _strictUnsupported = {
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'multipleOf',
+  'maxItems',
+  'uniqueItems',
+  'minContains',
+  'maxContains',
+  'minProperties',
+  'maxProperties',
+};
+const _strictFormats = {'date-time', 'time', 'date', 'duration', 'email', 'hostname', 'uri', 'ipv4', 'ipv6', 'uuid'};
+
+bool _strictRejects(String key, Object? value) {
+  if (_strictUnsupported.contains(key)) {
+    return true;
+  }
+
+  if (key == 'minItems') {
+    return value != 0 && value != 1;
+  }
+
+  return key == 'format' && !_strictFormats.contains(value);
+}
+
+/// Whether [tool] is sent strict: when it asks for strict sampling, the model supports it and its schema converts.
+/// [disablePreferred] sends `prefer` tools non-strict, after Anthropic rejected them for exceeding its limits.
+bool? _strict(Tool tool, bool supported, bool disablePreferred) {
+  if (disablePreferred && prefersStrictSampling(tool)) {
+    return null;
+  }
+
+  return resolveStrictSampling(tool, supported, _strictRejects);
+}
+
+/// The request's tools. A strict tool sends its strict schema; the others only `properties`, `required` and the
+/// keywords property references and the model need. [strict] says whether the model supports strict tools.
+List<Json> convertTools(
+  List<Tool> tools, {
+  bool eager = true,
+  Json? cache,
+  bool strict = false,
+  bool disablePreferredStrict = false,
+}) {
   return [
     for (final (i, tool) in tools.indexed)
-      {
-        'name': tool.name,
-        'description': tool.description,
-        if (eager) 'eager_input_streaming': true,
-
-        // Anthropic rejects root anyOf, oneOf and allOf, so only these root keywords are kept.
-        'input_schema': {
-          'type': 'object',
-          'properties': tool.parameters['properties'] ?? <String, Object?>{},
-          'required': tool.parameters['required'] ?? <Object?>[],
-          if (tool.parameters.containsKey('additionalProperties'))
-            'additionalProperties': tool.parameters['additionalProperties'],
-          if (tool.parameters.containsKey(r'$defs')) r'$defs': tool.parameters[r'$defs'],
-          if (tool.parameters.containsKey('definitions')) 'definitions': tool.parameters['definitions'],
-        },
-        if (cache != null && i == tools.length - 1) 'cache_control': cache,
-      },
+      _tool(tool, eager, i == tools.length - 1 ? cache : null, strict, disablePreferredStrict),
   ];
 }
+
+Json _tool(Tool tool, bool eager, Json? cache, bool supported, bool disablePreferred) {
+  final strict = _strict(tool, supported, disablePreferred);
+  final parameters = strictToolParameters(tool, strict);
+
+  // Anthropic rejects root anyOf, oneOf and allOf, so only these root keywords are kept.
+  final schema = {
+    'type': 'object',
+    'properties': parameters['properties'] ?? <String, Object?>{},
+    'required': parameters['required'] ?? <Object?>[],
+    if (parameters.containsKey('additionalProperties')) 'additionalProperties': parameters['additionalProperties'],
+    if (parameters.containsKey(r'$defs')) r'$defs': parameters[r'$defs'],
+    if (parameters.containsKey('definitions')) 'definitions': parameters['definitions'],
+  };
+  return {
+    'name': tool.name,
+    'description': tool.description,
+    if (eager) 'eager_input_streaming': true,
+    if (strict == true) 'strict': true,
+    'input_schema': strict == true ? {...parameters, ...schema} : schema,
+    'cache_control': ?cache,
+  };
+}
+
+/// Whether a request of [tools] sends a `prefer` tool strict, so a rejection for Claude's strict tool limits can be
+/// resent without.
+bool _hasPreferredStrict(Model model, List<Tool> tools, bool disablePreferred) {
+  final supported = _Compat(model).strictTools;
+  return tools.any((tool) => prefersStrictSampling(tool) && _strict(tool, supported, disablePreferred) == true);
+}
+
+/// Claude's rejections of a request whose strict tools exceed its limits. Observed limits: 20 strict tools, and 16
+/// optional or union-typed parameters across all strict tools.
+const _strictLimitErrors = [
+  'The compiled grammar is too large',
+  'Too many strict tools (',
+  'Schemas contains too many parameters with union types (',
+];
+
+/// Sessions whose strict tools Claude rejected for exceeding its limits: their later requests send `prefer` tools
+/// non-strict right away, since the tool set rarely changes and switching back would miss the prompt cache.
+final _overStrictLimits = SessionSet(10000);
 
 /// The beta features of a request. An `anthropic-beta` header in the model's or the caller's headers replaces them
 /// (a `null` one clears them).
@@ -344,7 +421,7 @@ List<String> _betas(Model model, List<Tool> tools, AnthropicOptions options) {
 }
 
 /// The request body for [messages], a transcript whose only system message leads.
-Json buildParams(Model model, List<Message> messages, AnthropicOptions options) {
+Json buildParams(Model model, List<Message> messages, AnthropicOptions options, {bool disablePreferredStrict = false}) {
   final cache = _cacheControl(model, options.cacheRetention);
   final compat = _Compat(model);
   final system = initialSystemMessage(messages);
@@ -376,7 +453,13 @@ Json buildParams(Model model, List<Message> messages, AnthropicOptions options) 
   }
 
   if (tools.isNotEmpty) {
-    params['tools'] = convertTools(tools, eager: compat.eagerToolInput, cache: compat.cachedTools ? cache : null);
+    params['tools'] = convertTools(
+      tools,
+      eager: compat.eagerToolInput,
+      cache: compat.cachedTools ? cache : null,
+      strict: compat.strictTools,
+      disablePreferredStrict: disablePreferredStrict,
+    );
   }
 
   // A `thinkingLevelMap` with `off: null` marks thinking as impossible to turn off.
@@ -549,6 +632,15 @@ Stream<Json> anthropicEvents(Stream<List<int>> body) async* {
   }
 }
 
+/// Whether Anthropic rejected a request because its strict tools exceed Claude's limits.
+bool _strictLimitRejection(APIError error) {
+  if (error.status != 400 || error.type != 'invalid_request_error') {
+    return false;
+  }
+
+  return _strictLimitErrors.any(error.message.contains);
+}
+
 /// pi's stop reason for Anthropic's, with an error message for refusals.
 ({StopReason reason, String? error}) mapStopReason(String reason, Json? details) {
   return switch (reason) {
@@ -601,21 +693,50 @@ Future<void> _run(
       throw const AbortedException();
     }
 
-    var params = buildParams(model, transcript, options);
-    final next = await options.onPayload?.call(params, model);
-    if (next != null) {
-      params = {...next, 'stream': true};
+    var disablePreferred = _overStrictLimits.contains(options.sessionId);
+    http.StreamedResponse response;
+    for (;;) {
+      var params = buildParams(model, transcript, options, disablePreferredStrict: disablePreferred);
+      final next = await options.onPayload?.call(params, model);
+      if (next != null) {
+        params = {...next, 'stream': true};
+      }
+
+      try {
+        response = await retryRequest(
+          () => (options.client ?? owned!).beta.messages.create(
+            params,
+            RequestOptions(signal: signal?.future, timeout: options.timeout),
+          ),
+          maxRetries: options.maxRetries,
+          maxDelay: options.maxRetryDelay,
+          signal: signal,
+        );
+        break;
+      } on APIError catch (error) {
+        // Only a rejected request is resent, once, with its `prefer` tools non-strict; never a started stream.
+        if (!_strictLimitRejection(error) || disablePreferred || (signal?.aborted ?? false)) {
+          rethrow;
+        }
+
+        if (!_hasPreferredStrict(model, currentTools(transcript), disablePreferred)) {
+          rethrow;
+        }
+
+        disablePreferred = true;
+        _overStrictLimits.add(options.sessionId);
+        output.diagnostics = [
+          ...?output.diagnostics,
+          Diagnostic(
+            type: 'anthropic_strict_tools_fallback',
+            timestamp: DateTime.now().millisecondsSinceEpoch,
+            error: {'message': error.message},
+            details: {'reason': 'strict_tool_limits_exceeded'},
+          ),
+        ];
+      }
     }
 
-    final http.StreamedResponse response = await retryRequest(
-      () => (options.client ?? owned!).beta.messages.create(
-        params,
-        RequestOptions(signal: signal?.future, timeout: options.timeout),
-      ),
-      maxRetries: options.maxRetries,
-      maxDelay: options.maxRetryDelay,
-      signal: signal,
-    );
     await options.onResponse?.call(ProviderResponse(response.statusCode, response.headers), model);
     stream.push(StartEvent(output));
     await _read(model, response.stream, options, output, stream);
