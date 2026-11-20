@@ -1,9 +1,13 @@
 import 'package:chorus/src/ai/json.dart';
+import 'package:chorus/src/ai/streaming_json.dart';
 import 'package:test/test.dart';
+
+/// The streaming parser's value of [text], read in one piece.
+Object? parsePartialJson(String text) => (StreamingJsonParser()..append(text)).snapshot()?.value;
 
 // Ported from pi's test/json-parse.test.ts; the partial cases at the end are chorus's own.
 void main() {
-  group('parsePartialJson', () {
+  group('partial values', () {
     test('keeps invalid \\u escapes as literal text without dropping fields', () {
       expect(parsePartialJson(r'{"text":"\url{x}"}'), {'text': r'\url{x}'});
       expect(parsePartialJson(r'{"path":"a.tex","content":"\usepackage{x}","mode":"w"}'), {

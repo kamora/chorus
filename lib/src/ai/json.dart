@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'streaming_json.dart';
 import 'types.dart';
 
 const _escapes = {'"', r'\', '/', 'b', 'f', 'n', 'r', 't'};
@@ -97,123 +98,53 @@ Object? decodeWithRepair(String json) {
   }
 }
 
-/// The value of possibly incomplete JSON text, for previews while it streams; never throws.
-///
-/// Open strings and containers are closed. A member or element that cannot be completed is dropped, and so is an
-/// unfinished literal (pi shows `true` for `tr`). Each call reads the whole text, so a stream costs time quadratic
-/// in its length; pi's incremental parser is linear.
-Object? parsePartialJson(String text) {
-  if (text.trim().isEmpty) {
-    return null;
-  }
-
-  try {
-    return decodeWithRepair(text);
-  } on FormatException {
-    // Retry at each earlier point where a member or element begins, newest first.
-    final cuts = <int>[text.length];
-    var inside = false;
-    var escaped = false;
-    for (var i = 0; i < text.length; i++) {
-      final char = text[i];
-      if (inside) {
-        if (escaped) {
-          escaped = false;
-        } else if (char == r'\') {
-          escaped = true;
-        } else if (char == '"') {
-          inside = false;
-        }
-
-        continue;
-      }
-
-      if (char == '"') {
-        inside = true;
-      } else if (char == ',') {
-        cuts.add(i);
-      } else if (char == '{' || char == '[') {
-        cuts.add(i + 1);
-      }
-    }
-
-    for (final cut in cuts..sort((a, b) => b - a)) {
-      try {
-        return decodeWithRepair(_close(text.substring(0, cut)));
-      } on FormatException {
-        continue;
-      }
-    }
-
-    return null;
-  }
-}
-
-/// [text] with its open string and containers closed.
-String _close(String text) {
-  final stack = <String>[];
-  var inside = false;
-
-  // Where the escape being read starts, and how many characters it still needs.
-  var escape = -1;
-  var needs = 0;
-  for (var i = 0; i < text.length; i++) {
-    final char = text[i];
-    if (inside) {
-      if (needs > 0) {
-        needs--;
-        if (char == 'u' && i == escape + 1) {
-          needs = 4;
-        }
-      } else if (char == r'\') {
-        escape = i;
-        needs = 1;
-      } else if (char == '"') {
-        inside = false;
-      }
-
-      continue;
-    }
-
-    switch (char) {
-      case '"':
-        inside = true;
-      case '{':
-        stack.add('}');
-      case '[':
-        stack.add(']');
-      case '}' || ']':
-        if (stack.isNotEmpty) {
-          stack.removeLast();
-        }
-    }
-  }
-
-  var out = text;
-  if (inside) {
-    // An unfinished escape, such as a `\u` with fewer than four digits, is dropped.
-    out = '${needs > 0 ? out.substring(0, escape) : out}"';
-  }
-
-  out = out.trimRight();
-  if (out.endsWith(',')) {
-    out = out.substring(0, out.length - 1);
-  }
-
-  return out + stack.reversed.join();
-}
-
-/// The arguments of one streaming tool call: the raw text for the final parse, and partial arguments in between.
+/// The arguments of one streaming tool call: the raw text, for the one full parse when the call ends, and a
+/// [StreamingJsonParser] for the partial arguments in between. Providers keep one per call in their own stream state,
+/// never on the content block, so the raw text never reaches partial messages or transcripts.
 class ToolArgumentsStream {
   final _text = StringBuffer();
+  var _parser = StreamingJsonParser();
+  ({Object? value})? _snapshot;
+  Json _arguments = {};
 
-  /// Appends a piece of argument text; returns the partial arguments so far.
+  /// The raw argument text received so far.
+  String get text => _text.toString();
+
+  /// Appends a piece of argument text; returns the partial arguments, a new map whenever they changed.
   Json append(String delta) {
     _text.write(delta);
-    final value = parsePartialJson(_text.toString());
-    return value is Map ? value.cast<String, Object?>() : {};
+    _parser.append(delta);
+    return _partial();
   }
 
-  /// The final arguments: one full parse of the complete text.
+  /// Takes the provider's complete argument text. When it continues the text so far, returns the missing piece as
+  /// `delta`; otherwise starts over with [complete]. Either way returns the partial arguments of [complete].
+  ({String? delta, Json arguments}) replace(String complete) {
+    final current = _text.toString();
+    if (complete.startsWith(current)) {
+      final delta = complete.substring(current.length);
+      return (delta: delta, arguments: delta.isEmpty ? _partial() : append(delta));
+    }
+
+    _text.clear();
+    _parser = StreamingJsonParser();
+    return (delta: null, arguments: append(complete));
+  }
+
+  /// The final arguments: one full parse of the complete text, which reports malformed arguments.
   ({Json arguments, String? error}) finish() => parseToolArguments(_text.toString());
+
+  Json _partial() {
+    final snapshot = _parser.snapshot();
+    if (identical(snapshot?.value, _snapshot?.value) && (snapshot == null) == (_snapshot == null)) {
+      return _arguments;
+    }
+
+    _snapshot = snapshot;
+
+    // Tool arguments are an object; any other partial value shows as no arguments yet.
+    final value = snapshot?.value;
+    _arguments = value is Map<String, Object?> ? value : {};
+    return _arguments;
+  }
 }
